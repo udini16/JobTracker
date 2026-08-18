@@ -10,6 +10,10 @@ All endpoints are prefixed with `/api`.
 - **Payload**: `multipart/form-data` (resume text/file, jobId)
 - **Response**: The updated job object containing `generatedEmail` (subject and body).
 
+### `POST /generate-application`
+- **Payload**: `{ jobId, profileText }`
+- **Response**: The updated job object containing `generatedResume` and `generatedCoverLetter`.
+
 ### `POST /send`
 - **Payload**: `{ jobId }`
 - **Response**: Success status.

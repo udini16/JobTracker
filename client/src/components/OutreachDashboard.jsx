@@ -1,11 +1,25 @@
 import React, { useState } from 'react';
-import { Send, Bot, Mail, CheckCircle2, Eye, Loader2, ExternalLink } from 'lucide-react';
+import { Send, Bot, Mail, CheckCircle2, Eye, Loader2, ExternalLink, FileText, X } from 'lucide-react';
 import axios from 'axios';
 
 export default function OutreachDashboard({ jobs, setJobs, resumeText }) {
   const [generatingFor, setGeneratingFor] = useState(null);
+  const [tailoringFor, setTailoringFor] = useState(null);
   const [sendingFor, setSendingFor] = useState(null);
+  const [activeModalJob, setActiveModalJob] = useState(null);
   const [error, setError] = useState('');
+
+  const downloadMarkdown = (content, filename) => {
+    const blob = new Blob([content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   const generateEmail = async (jobId) => {
     if (!resumeText) {
@@ -26,6 +40,29 @@ export default function OutreachDashboard({ jobs, setJobs, resumeText }) {
       setError(err.message);
     } finally {
       setGeneratingFor(null);
+    }
+  };
+
+  const tailorApplication = async (jobId) => {
+    if (!resumeText) {
+      setError('Please provide your Base Profile first.');
+      return;
+    }
+    setError('');
+    setTailoringFor(jobId);
+    
+    try {
+      const response = await axios.post('http://localhost:3000/api/generate-application', { jobId, profileText: resumeText });
+      if (response.data.success) {
+        setJobs(prev => prev.map(j => j.id === jobId ? response.data.job : j));
+        setActiveModalJob(response.data.job);
+      } else {
+        setError(response.data.error);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setTailoringFor(null);
     }
   };
 
@@ -122,6 +159,25 @@ export default function OutreachDashboard({ jobs, setJobs, resumeText }) {
                   Generate Hermes Email
                 </button>
               )}
+
+              <button
+                onClick={() => tailorApplication(job.id)}
+                disabled={tailoringFor === job.id}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+              >
+                {tailoringFor === job.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                Tailor Resume & CV
+              </button>
+
+              {job.generatedResume && (
+                <button
+                  onClick={() => setActiveModalJob(job)}
+                  className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-sm font-medium transition-colors"
+                >
+                  <Eye className="w-4 h-4" />
+                  View Docs
+                </button>
+              )}
               
               {job.generatedEmail && job.status !== 'Sent' && job.status !== 'Opened' && (
                 <button
@@ -137,6 +193,48 @@ export default function OutreachDashboard({ jobs, setJobs, resumeText }) {
           </div>
         ))}
       </div>
+
+      {activeModalJob && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-5xl max-h-[90vh] flex flex-col">
+            <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl">
+              <h3 className="text-lg font-bold text-slate-900">Application Documents for {activeModalJob.company}</h3>
+              <button onClick={() => setActiveModalJob(null)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center border-b pb-2">
+                  <h4 className="font-semibold text-slate-700 flex items-center gap-2"><FileText className="w-4 h-4"/> Tailored Resume</h4>
+                  <button onClick={() => downloadMarkdown(activeModalJob.generatedResume, `${activeModalJob.company.replace(/\s+/g, '_')}_Resume.md`)} className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1">Download .md</button>
+                </div>
+                <textarea 
+                  className="w-full h-[500px] p-4 text-sm font-mono text-slate-800 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50"
+                  defaultValue={activeModalJob.generatedResume}
+                  readOnly
+                />
+              </div>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center border-b pb-2">
+                  <h4 className="font-semibold text-slate-700 flex items-center gap-2"><Mail className="w-4 h-4"/> Cover Letter</h4>
+                  <button onClick={() => downloadMarkdown(activeModalJob.generatedCoverLetter, `${activeModalJob.company.replace(/\s+/g, '_')}_CoverLetter.md`)} className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1">Download .md</button>
+                </div>
+                <textarea 
+                  className="w-full h-[500px] p-4 text-sm font-mono text-slate-800 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50"
+                  defaultValue={activeModalJob.generatedCoverLetter}
+                  readOnly
+                />
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 rounded-b-xl flex justify-end">
+              <button onClick={() => setActiveModalJob(null)} className="px-4 py-2 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

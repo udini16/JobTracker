@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const { scrapeJobs } = require('./scraper');
-const { generateReachoutEmail } = require('./llm');
+const { generateReachoutEmail, generateTailoredApplication } = require('./llm');
 const { sendReachoutEmail } = require('./email');
 const { sendNotification } = require('./telegram');
 
@@ -48,6 +48,24 @@ app.post('/api/generate', upload.single('resume'), async (req, res) => {
         const { subject, body } = await generateReachoutEmail(resumeText, job.description, job.company);
         job.generatedEmail = { subject, body };
         job.status = 'Email Generated';
+        res.json({ success: true, job });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.post('/api/generate-application', async (req, res) => {
+    const { jobId, profileText } = req.body;
+    if (!profileText) {
+        return res.status(400).json({ success: false, error: 'Base profile is required' });
+    }
+    const job = jobsStore.find(j => j.id === jobId);
+    if (!job) return res.status(404).json({ success: false, error: 'Job not found' });
+
+    try {
+        const { resume, coverLetter } = await generateTailoredApplication(profileText, job.description, job.company);
+        job.generatedResume = resume;
+        job.generatedCoverLetter = coverLetter;
         res.json({ success: true, job });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });

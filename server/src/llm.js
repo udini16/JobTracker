@@ -46,4 +46,61 @@ Start directly with the subject line as "Subject: ...", followed by a blank line
     }
 }
 
-module.exports = { generateReachoutEmail };
+async function generateTailoredApplication(baseProfile, jobDescription, companyName) {
+    try {
+        const prompt = `You are an expert career coach and resume writer. I will provide you with a candidate's master profile and a job description. 
+Your task is to generate a highly tailored Resume and a Cover Letter specifically for this job.
+
+Candidate's Master Profile:
+${baseProfile}
+
+Job Description:
+${jobDescription}
+
+Company:
+${companyName}
+
+CRITICAL INSTRUCTIONS:
+1. DO NOT USE ANY EMOJIS in the Resume or the Cover Letter. None. Zero emojis.
+2. The tone must be highly professional, corporate, and traditional.
+3. Generate a tailored Markdown Resume. You MUST use exactly these headings and no others: 
+   - [Header: Name and Contact Info]
+   - SKILLS
+   - EDUCATION
+   - PROFESSIONAL EXPERIENCE
+   - TECHNICAL PROJECTS
+   - CERTIFICATIONS
+4. Highlight the skills and experiences from the master profile that best match the job description. Do not invent new experiences.
+5. Generate a professional Cover Letter connecting the candidate's tailored resume to the specific requirements of the job. No emojis.
+6. Output the tailored resume inside <RESUME> tags and the cover letter inside <COVER_LETTER> tags.
+
+Format:
+<RESUME>
+# Resume Content
+</RESUME>
+<COVER_LETTER>
+Cover Letter Content
+</COVER_LETTER>
+`;
+        const response = await openai.chat.completions.create({
+            model: process.env.LLM_MODEL || 'gpt-4o-mini',
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.7,
+        });
+
+        const fullResponse = response.choices[0].message.content.trim();
+        
+        const resumeMatch = fullResponse.match(/<RESUME>\s*([\s\S]*?)\s*<\/RESUME>/i);
+        const clMatch = fullResponse.match(/<COVER_LETTER>\s*([\s\S]*?)\s*<\/COVER_LETTER>/i);
+        
+        return {
+            resume: resumeMatch ? resumeMatch[1].trim() : 'Failed to parse resume tags from LLM response.\n\n' + fullResponse,
+            coverLetter: clMatch ? clMatch[1].trim() : 'Failed to parse cover letter tags from LLM response.'
+        };
+    } catch (error) {
+        console.error('LLM Application Generation error:', error);
+        throw error;
+    }
+}
+
+module.exports = { generateReachoutEmail, generateTailoredApplication };
