@@ -50,7 +50,7 @@ function App() {
             </div>
           </div>
         ) : (
-          <div className="max-w-3xl mx-auto">
+          <div className="w-full">
             <ProfileManager onProfileUpdate={setProfileData} profileData={profileData} />
           </div>
         )}
