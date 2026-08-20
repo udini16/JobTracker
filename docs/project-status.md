@@ -21,6 +21,7 @@ This document outlines all the features and tasks that have been successfully im
   - **Core Details:** General summary, work history, and education.
   - **Master Skills:** A comprehensive list of technical tools and languages.
   - **Project Portfolio:** A list of past projects, including their specific tech stacks.
+- **Auto-Parse AI:** Added an "Auto-Parse Profile with AI" feature that takes a raw resume block, extracts the skills into the Master Skills List, separates projects into the Project Portfolio, and leaves a cleanly refined summary in the Core Details box.
 - **Local Persistence:** Data is reliably saved across sessions using browser `localStorage`.
 
 ### AI Generation & Outreach
