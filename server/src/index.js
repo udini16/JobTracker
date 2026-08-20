@@ -22,9 +22,11 @@ app.post('/api/scrape', async (req, res) => {
         const selectedPlatforms = (platforms && platforms.length > 0) ? platforms : ['linkedin'];
         const jobs = await scrapeJobs(keyword || 'React', location || 'Remote', selectedPlatforms);
         
-        // Merge with existing or clear depending on preference. Let's prepend.
+        // Filter out duplicate jobs
         const newJobs = jobs.map(j => ({ ...j, status: 'Scraped', generatedEmail: null }));
-        jobsStore = [...newJobs, ...jobsStore];
+        const uniqueNewJobs = newJobs.filter(nj => !jobsStore.some(ej => ej.id === nj.id));
+        
+        jobsStore = [...uniqueNewJobs, ...jobsStore];
         
         res.json({ success: true, jobs: jobsStore });
     } catch (error) {
@@ -115,6 +117,27 @@ app.get('/api/track/:jobId', async (req, res) => {
         'Content-Length': pixel.length
     });
     res.end(pixel);
+});
+
+app.post('/api/generate-pdf', async (req, res) => {
+    const { html } = req.body;
+    if (!html) return res.status(400).json({ error: 'HTML content required' });
+
+    try {
+        const puppeteer = require('puppeteer');
+        const browser = await puppeteer.launch({ headless: true });
+        const page = await browser.newPage();
+        await page.setContent(html, { waitUntil: 'networkidle0' });
+        const pdfBuffer = await page.pdf({ format: 'A4', margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' } });
+        await browser.close();
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'attachment; filename=document.pdf');
+        res.send(pdfBuffer);
+    } catch (error) {
+        console.error('PDF Generation Error:', error);
+        res.status(500).json({ error: 'Failed to generate PDF' });
+    }
 });
 
 app.get('/api/jobs', (req, res) => {

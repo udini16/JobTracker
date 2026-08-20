@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Send, Bot, Mail, CheckCircle2, Eye, Loader2, ExternalLink, FileText, X } from 'lucide-react';
 import axios from 'axios';
 import { marked } from 'marked';
-import html2pdf from 'html2pdf.js';
 
 export default function OutreachDashboard({ jobs, setJobs, profileData }) {
   const [generatingFor, setGeneratingFor] = useState(null);
@@ -16,34 +15,40 @@ export default function OutreachDashboard({ jobs, setJobs, profileData }) {
   const [manualSkills, setManualSkills] = useState([]);
   const [newManualSkill, setNewManualSkill] = useState('');
 
-  const downloadPDF = (content, filename) => {
+  const downloadPDF = async (content, filename) => {
     const htmlContent = marked.parse(content);
-    const container = document.createElement('div');
-    container.innerHTML = htmlContent;
-    container.style.padding = '40px';
-    container.style.fontFamily = 'Arial, sans-serif';
-    container.style.color = '#333';
-    container.style.lineHeight = '1.6';
-    
-    const style = document.createElement('style');
-    style.innerHTML = `
-      h1, h2, h3 { color: #111; margin-bottom: 10px; margin-top: 20px; }
-      p { margin-bottom: 15px; }
-      ul, ol { margin-bottom: 15px; padding-left: 20px; }
-      li { margin-bottom: 5px; }
-      strong { font-weight: bold; }
+    const fullHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; color: #333; line-height: 1.6; padding: 20px; }
+          h1, h2, h3 { color: #111; margin-bottom: 10px; margin-top: 20px; }
+          p { margin-bottom: 15px; }
+          ul, ol { margin-bottom: 15px; padding-left: 20px; }
+          li { margin-bottom: 5px; }
+          strong { font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        ${htmlContent}
+      </body>
+      </html>
     `;
-    container.appendChild(style);
 
-    const opt = {
-      margin:       1,
-      filename:     filename,
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2 },
-      jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
-    };
-    
-    html2pdf().set(opt).from(container).save();
+    try {
+      const response = await axios.post('http://localhost:3000/api/generate-pdf', { html: fullHtml }, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error('PDF download failed', err);
+      alert('Failed to generate PDF');
+    }
   };
 
   const generateEmail = async (jobId) => {
