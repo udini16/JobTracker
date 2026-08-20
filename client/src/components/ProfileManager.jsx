@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { UserCircle, Code, Briefcase, Plus, Trash2 } from 'lucide-react';
+import { UserCircle, Code, Briefcase, Plus, Trash2, Wand2, Loader2 } from 'lucide-react';
+import axios from 'axios';
 
 export default function ProfileManager({ onProfileUpdate, profileData }) {
   const [coreDetails, setCoreDetails] = useState('');
@@ -8,6 +9,10 @@ export default function ProfileManager({ onProfileUpdate, profileData }) {
   
   const [projects, setProjects] = useState([]);
   const [newProject, setNewProject] = useState({ title: '', description: '', techStack: '' });
+
+  const [isParsing, setIsParsing] = useState(false);
+  const [parseError, setParseError] = useState('');
+  const [parseTimer, setParseTimer] = useState(15);
 
   useEffect(() => {
     try {
@@ -84,6 +89,48 @@ export default function ProfileManager({ onProfileUpdate, profileData }) {
     saveToLocal({ coreDetails, projects: updated, masterSkills });
   };
 
+  const handleAutoParse = async () => {
+    if (!coreDetails.trim()) return;
+    setIsParsing(true);
+    setParseError('');
+    setParseTimer(15);
+    
+    const timerInterval = setInterval(() => {
+      setParseTimer(prev => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+
+    try {
+      const response = await axios.post('http://localhost:3000/api/parse-profile', { rawText: coreDetails });
+      if (response.data.success) {
+        const parsedData = response.data.parsedData;
+        
+        const updatedSkills = [...new Set([...masterSkills, ...(parsedData.masterSkills || [])])];
+        
+        const parsedProjects = (parsedData.projects || []).map((p, index) => ({
+          id: Date.now().toString() + index.toString(),
+          title: p.title || '',
+          description: p.description || '',
+          skills: p.skills || []
+        }));
+        const updatedProjects = [...projects, ...parsedProjects];
+        
+        const updatedCore = parsedData.coreDetails || coreDetails;
+        
+        setCoreDetails(updatedCore);
+        setMasterSkills(updatedSkills);
+        setProjects(updatedProjects);
+        saveToLocal({ coreDetails: updatedCore, projects: updatedProjects, masterSkills: updatedSkills });
+      } else {
+        setParseError(response.data.error || 'Failed to parse profile.');
+      }
+    } catch (err) {
+      setParseError(err.message);
+    } finally {
+      clearInterval(timerInterval);
+      setIsParsing(false);
+    }
+  };
+
   return (
     <div className="space-y-6 pb-12">
       <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
@@ -100,6 +147,26 @@ export default function ProfileManager({ onProfileUpdate, profileData }) {
           value={coreDetails}
           onChange={handleCoreChange}
         />
+        {parseError && <p className="text-sm text-red-500 mt-2">{parseError}</p>}
+        <div className="mt-4 flex justify-end">
+          <button 
+            onClick={handleAutoParse} 
+            disabled={isParsing || !coreDetails.trim()}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 min-w-[240px] justify-center"
+          >
+            {isParsing ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                {parseTimer > 0 ? `Parsing... (~${parseTimer}s left)` : 'Almost done...'}
+              </>
+            ) : (
+              <>
+                <Wand2 className="w-4 h-4" />
+                Auto-Parse Profile with AI
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
