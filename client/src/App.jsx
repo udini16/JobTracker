@@ -5,7 +5,7 @@ import OutreachDashboard from './components/OutreachDashboard';
 import { Briefcase, UserCircle, LayoutDashboard } from 'lucide-react';
 
 function App() {
-  const [profileText, setProfileText] = useState('');
+  const [profileData, setProfileData] = useState({ coreDetails: '', projects: [], masterSkills: [] });
   const [jobs, setJobs] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('pipeline');
@@ -46,12 +46,12 @@ function App() {
               <JobSearch onJobsFound={(newJobs) => setJobs(newJobs)} isLoading={isLoading} setIsLoading={setIsLoading} />
             </div>
             <div className="lg:col-span-2">
-              <OutreachDashboard jobs={jobs} setJobs={setJobs} resumeText={profileText} />
+              <OutreachDashboard jobs={jobs} setJobs={setJobs} profileData={profileData} />
             </div>
           </div>
         ) : (
           <div className="max-w-3xl mx-auto">
-            <ProfileManager onProfileUpdate={setProfileText} profileText={profileText} />
+            <ProfileManager onProfileUpdate={setProfileData} profileData={profileData} />
           </div>
         )}
       </main>

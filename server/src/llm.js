@@ -46,13 +46,26 @@ Start directly with the subject line as "Subject: ...", followed by a blank line
     }
 }
 
-async function generateTailoredApplication(baseProfile, jobDescription, companyName) {
+async function generateTailoredApplication(profileData, jobDescription, companyName) {
     try {
-        const prompt = `You are an expert career coach and resume writer. I will provide you with a candidate's master profile and a job description. 
+        const projectsText = profileData.projects && profileData.projects.length > 0 
+            ? profileData.projects.map(p => `- ${p.title}: ${p.description}`).join('\n')
+            : 'No specific projects provided.';
+        const skillsText = profileData.skills && profileData.skills.length > 0
+            ? profileData.skills.join(', ')
+            : 'No specific skills provided.';
+
+        const prompt = `You are an expert career coach and resume writer. I will provide you with a candidate's profile data and a job description. 
 Your task is to generate a highly tailored Resume and a Cover Letter specifically for this job.
 
-Candidate's Master Profile:
-${baseProfile}
+Candidate's Core Profile:
+${profileData.coreDetails}
+
+Candidate's Selected Projects for this role:
+${projectsText}
+
+Candidate's Selected Skills for this role:
+${skillsText}
 
 Job Description:
 ${jobDescription}
