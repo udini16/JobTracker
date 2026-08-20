@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Send, Bot, Mail, CheckCircle2, Eye, Loader2, ExternalLink, FileText, X } from 'lucide-react';
 import axios from 'axios';
+import { marked } from 'marked';
+import html2pdf from 'html2pdf.js';
 
 export default function OutreachDashboard({ jobs, setJobs, profileData }) {
   const [generatingFor, setGeneratingFor] = useState(null);
@@ -14,16 +16,34 @@ export default function OutreachDashboard({ jobs, setJobs, profileData }) {
   const [manualSkills, setManualSkills] = useState([]);
   const [newManualSkill, setNewManualSkill] = useState('');
 
-  const downloadMarkdown = (content, filename) => {
-    const blob = new Blob([content], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const downloadPDF = (content, filename) => {
+    const htmlContent = marked.parse(content);
+    const container = document.createElement('div');
+    container.innerHTML = htmlContent;
+    container.style.padding = '40px';
+    container.style.fontFamily = 'Arial, sans-serif';
+    container.style.color = '#333';
+    container.style.lineHeight = '1.6';
+    
+    const style = document.createElement('style');
+    style.innerHTML = `
+      h1, h2, h3 { color: #111; margin-bottom: 10px; margin-top: 20px; }
+      p { margin-bottom: 15px; }
+      ul, ol { margin-bottom: 15px; padding-left: 20px; }
+      li { margin-bottom: 5px; }
+      strong { font-weight: bold; }
+    `;
+    container.appendChild(style);
+
+    const opt = {
+      margin:       1,
+      filename:     filename,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2 },
+      jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+    };
+    
+    html2pdf().set(opt).from(container).save();
   };
 
   const generateEmail = async (jobId) => {
@@ -240,7 +260,7 @@ export default function OutreachDashboard({ jobs, setJobs, profileData }) {
               <div className="space-y-4">
                 <div className="flex justify-between items-center border-b pb-2">
                   <h4 className="font-semibold text-slate-700 flex items-center gap-2"><FileText className="w-4 h-4"/> Tailored Resume</h4>
-                  <button onClick={() => downloadMarkdown(activeModalJob.generatedResume, `${activeModalJob.company.replace(/\s+/g, '_')}_Resume.md`)} className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1">Download .md</button>
+                  <button onClick={() => downloadPDF(activeModalJob.generatedResume, `${activeModalJob.company.replace(/\s+/g, '_')}_Resume.pdf`)} className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1">Download .pdf</button>
                 </div>
                 <textarea 
                   className="w-full h-[500px] p-4 text-sm font-mono text-slate-800 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50"
@@ -251,7 +271,7 @@ export default function OutreachDashboard({ jobs, setJobs, profileData }) {
               <div className="space-y-4">
                 <div className="flex justify-between items-center border-b pb-2">
                   <h4 className="font-semibold text-slate-700 flex items-center gap-2"><Mail className="w-4 h-4"/> Cover Letter</h4>
-                  <button onClick={() => downloadMarkdown(activeModalJob.generatedCoverLetter, `${activeModalJob.company.replace(/\s+/g, '_')}_CoverLetter.md`)} className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1">Download .md</button>
+                  <button onClick={() => downloadPDF(activeModalJob.generatedCoverLetter, `${activeModalJob.company.replace(/\s+/g, '_')}_CoverLetter.pdf`)} className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1">Download .pdf</button>
                 </div>
                 <textarea 
                   className="w-full h-[500px] p-4 text-sm font-mono text-slate-800 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50"
