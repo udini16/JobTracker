@@ -56,8 +56,8 @@ app.post('/api/generate', upload.single('resume'), async (req, res) => {
 
 app.post('/api/generate-application', async (req, res) => {
     const { jobId, profileData } = req.body;
-    if (!profileData || !profileData.coreDetails) {
-        return res.status(400).json({ success: false, error: 'Base profile core details are required' });
+    if (!profileData || (!profileData.biodata && !profileData.experience)) {
+        return res.status(400).json({ success: false, error: 'Base profile details are required' });
     }
     const job = jobsStore.find(j => j.id === jobId);
     if (!job) return res.status(404).json({ success: false, error: 'Job not found' });

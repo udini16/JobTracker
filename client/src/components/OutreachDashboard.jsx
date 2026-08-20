@@ -56,7 +56,7 @@ export default function OutreachDashboard({ jobs, setJobs, profileData }) {
     setError('');
     setShowPreGenFor(jobId);
     setSelectedProjIds(profileData.projects?.map(p => p.id) || []);
-    setManualSkills(profileData.masterSkills || []);
+    setManualSkills([]);
     setNewManualSkill('');
   };
 
@@ -309,8 +309,36 @@ export default function OutreachDashboard({ jobs, setJobs, profileData }) {
 
               <div>
                 <h4 className="font-semibold text-slate-800 mb-2">2. Dynamic Skills</h4>
-                <p className="text-sm text-slate-500 mb-3">These skills are automatically populated from your selected projects and master list.</p>
+                <p className="text-sm text-slate-500 mb-3">These skills are automatically populated from your selected projects. You can add extra skills manually or select them from your master list.</p>
                 
+                <div className="mb-4 space-y-2">
+                  <p className="text-xs font-medium text-slate-700">Master Skills List (Click to include/exclude)</p>
+                  <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-2 border border-slate-200 rounded-lg bg-white">
+                    {profileData.masterSkills?.map(skill => {
+                      const isSelected = manualSkills.includes(skill);
+                      return (
+                        <button
+                          key={skill}
+                          type="button"
+                          onClick={() => {
+                            if (isSelected) {
+                              setManualSkills(prev => prev.filter(s => s !== skill));
+                            } else {
+                              setManualSkills(prev => [...prev, skill]);
+                            }
+                          }}
+                          className={`px-2 py-1 border rounded text-xs transition-colors ${isSelected ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-medium' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'}`}
+                        >
+                          {skill}
+                        </button>
+                      );
+                    })}
+                    {(!profileData.masterSkills || profileData.masterSkills.length === 0) && (
+                      <span className="text-xs text-slate-400">No master skills available in Base Profile.</span>
+                    )}
+                  </div>
+                </div>
+
                 <form onSubmit={addManualSkill} className="flex gap-2 mb-3">
                   <input
                     type="text"
