@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const { scrapeJobs } = require('./scraper');
-const { generateReachoutEmail, generateTailoredApplication } = require('./llm');
+const { generateReachoutEmail, generateTailoredApplication, parseRawProfile } = require('./llm');
 const { sendReachoutEmail } = require('./email');
 const { sendNotification } = require('./telegram');
 
@@ -67,6 +67,19 @@ app.post('/api/generate-application', async (req, res) => {
         job.generatedResume = resume;
         job.generatedCoverLetter = coverLetter;
         res.json({ success: true, job });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+app.post('/api/parse-profile', async (req, res) => {
+    const { rawText } = req.body;
+    if (!rawText) {
+        return res.status(400).json({ success: false, error: 'Raw text is required' });
+    }
+
+    try {
+        const parsedData = await parseRawProfile(rawText);
+        res.json({ success: true, parsedData });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }

@@ -17,11 +17,14 @@ This document outlines all the features and tasks that have been successfully im
 
 ### Profile Management System
 - **Tabbed Interface:** Separated the application into "Outreach Pipeline" and "My Base Profile" views.
-- **Complex Profile Data Structure:** Upgraded the profile manager from a single text block to a structured JSON format containing:
-  - **Core Details:** General summary, work history, and education.
+- **Structured 6-Box Grid:** Completely overhauled the profile manager into a clean 3x2 grid layout managing highly structured state:
+  - **Biodata:** Name, Email, Phone, GitHub, Portfolio.
+  - **Education:** Array of degrees with universities, CGPAs, and coursework.
+  - **Professional Experience:** Array of roles with companies, dates, locations, and responsibilities.
   - **Master Skills:** A comprehensive list of technical tools and languages.
   - **Project Portfolio:** A list of past projects, including their specific tech stacks.
-- **Auto-Parse AI:** Added an "Auto-Parse Profile with AI" feature that takes a raw resume block, extracts the skills into the Master Skills List, separates projects into the Project Portfolio, and leaves a cleanly refined summary in the Core Details box.
+  - **Certifications:** Free-text licenses and achievements.
+- **Auto-Parse AI Modal:** Added a dedicated "Auto-Parse Resume" modal that takes a raw resume block and intelligently distributes the data into the 6 highly structured boxes.
 - **Local Persistence:** Data is reliably saved across sessions using browser `localStorage`.
 
 ### AI Generation & Outreach

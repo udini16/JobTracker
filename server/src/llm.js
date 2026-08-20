@@ -48,6 +48,22 @@ Start directly with the subject line as "Subject: ...", followed by a blank line
 
 async function generateTailoredApplication(profileData, jobDescription, companyName) {
     try {
+        const biodataText = `Name: ${profileData.biodata?.name || ''}
+Email: ${profileData.biodata?.email || ''}
+Phone: ${profileData.biodata?.phone || ''}
+GitHub: ${profileData.biodata?.github || ''}
+Portfolio: ${profileData.biodata?.portfolio || ''}`;
+
+        const educationText = profileData.education && profileData.education.length > 0
+            ? profileData.education.map(e => `- ${e.degree} at ${e.university} (CGPA: ${e.cgpa || 'N/A'})\n  Courses: ${(e.courses || []).join(', ')}`).join('\n')
+            : 'No education provided.';
+
+        const experienceText = profileData.experience && profileData.experience.length > 0
+            ? profileData.experience.map(e => `- ${e.role} at ${e.company} (${e.location}) | ${e.startDate} - ${e.endDate}\n  ${e.description}`).join('\n\n')
+            : 'No experience provided.';
+
+        const certificationsText = profileData.certifications || 'No certifications provided.';
+
         const projectsText = profileData.projects && profileData.projects.length > 0 
             ? profileData.projects.map(p => `- ${p.title}: ${p.description}`).join('\n')
             : 'No specific projects provided.';
@@ -58,8 +74,17 @@ async function generateTailoredApplication(profileData, jobDescription, companyN
         const prompt = `You are an expert career coach and resume writer. I will provide you with a candidate's profile data and a job description. 
 Your task is to generate a highly tailored Resume and a Cover Letter specifically for this job.
 
-Candidate's Core Profile:
-${profileData.coreDetails}
+Candidate's Biodata:
+${biodataText}
+
+Candidate's Education:
+${educationText}
+
+Candidate's Professional Experience:
+${experienceText}
+
+Candidate's Certifications:
+${certificationsText}
 
 Candidate's Selected Projects for this role:
 ${projectsText}
@@ -116,4 +141,73 @@ Cover Letter Content
     }
 }
 
-module.exports = { generateReachoutEmail, generateTailoredApplication };
+async function parseRawProfile(rawText) {
+    try {
+        const prompt = `You are an expert resume parser. You will be provided with a raw resume text.
+Your task is to parse this resume and extract specific information into a strict JSON object.
+
+Extract the following:
+1. "biodata": Object with name, email, phone, github, and portfolio strings.
+2. "education": An array of objects. Each object must have: university, degree, cgpa, and an array of courses.
+3. "experience": An array of objects. Each object must have: company, location, role, startDate, endDate, and description.
+4. "projects": An array of project objects. Each object must have: title, description, and an array of skills.
+5. "masterSkills": A flat array of all technical skills, programming languages, and tools.
+6. "certifications": A string summarizing all certifications (if any).
+
+Respond ONLY with a valid JSON object in the following format:
+{
+  "biodata": {
+    "name": "string",
+    "email": "string",
+    "phone": "string",
+    "github": "string",
+    "portfolio": "string"
+  },
+  "education": [
+    {
+      "university": "string",
+      "degree": "string",
+      "cgpa": "string",
+      "courses": ["string"]
+    }
+  ],
+  "experience": [
+    {
+      "company": "string",
+      "location": "string",
+      "role": "string",
+      "startDate": "string",
+      "endDate": "string",
+      "description": "string"
+    }
+  ],
+  "projects": [
+    {
+      "title": "string",
+      "description": "string",
+      "skills": ["string"]
+    }
+  ],
+  "masterSkills": ["string"],
+  "certifications": "string"
+}
+
+Raw Resume:
+${rawText}
+`;
+        const response = await openai.chat.completions.create({
+            model: process.env.LLM_MODEL || 'gpt-4o-mini',
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.2,
+            response_format: { type: "json_object" }
+        });
+
+        const content = response.choices[0].message.content.trim();
+        return JSON.parse(content);
+    } catch (error) {
+        console.error('LLM Parsing error:', error);
+        throw error;
+    }
+}
+
+module.exports = { generateReachoutEmail, generateTailoredApplication, parseRawProfile };

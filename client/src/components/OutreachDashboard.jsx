@@ -27,7 +27,7 @@ export default function OutreachDashboard({ jobs, setJobs, profileData }) {
   };
 
   const generateEmail = async (jobId) => {
-    if (!profileData?.coreDetails) {
+    if (!profileData || Object.keys(profileData).length === 0) {
       setError('Please provide your Base Profile details first.');
       return;
     }
@@ -35,7 +35,7 @@ export default function OutreachDashboard({ jobs, setJobs, profileData }) {
     setGeneratingFor(jobId);
     
     try {
-      const response = await axios.post('http://localhost:3000/api/generate', { jobId, resumeText: profileData.coreDetails });
+      const response = await axios.post('http://localhost:3000/api/generate', { jobId, resumeText: JSON.stringify(profileData) });
       if (response.data.success) {
         setJobs(prev => prev.map(j => j.id === jobId ? response.data.job : j));
       } else {
@@ -49,8 +49,8 @@ export default function OutreachDashboard({ jobs, setJobs, profileData }) {
   };
 
   const handleTailorClick = (jobId) => {
-    if (!profileData?.coreDetails) {
-      setError('Please provide your Core Profile details first in the Base Profile tab.');
+    if (!profileData || Object.keys(profileData).length === 0) {
+      setError('Please provide your Profile details first in the Base Profile tab.');
       return;
     }
     setError('');
@@ -73,7 +73,7 @@ export default function OutreachDashboard({ jobs, setJobs, profileData }) {
       const response = await axios.post('http://localhost:3000/api/generate-application', { 
         jobId, 
         profileData: {
-          coreDetails: profileData.coreDetails,
+          ...profileData,
           projects: selectedProjects,
           skills: finalSkills
         } 
