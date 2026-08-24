@@ -210,4 +210,41 @@ ${rawText}
     }
 }
 
-module.exports = { generateReachoutEmail, generateTailoredApplication, parseRawProfile };
+async function parseCustomJobText(rawText) {
+    try {
+        const prompt = `You are an expert job parser. You will be provided with raw text or HTML content from a custom job link (like a Threads post, a company career page, or manual text).
+Your task is to parse this content and extract the job details into a strict JSON object.
+
+Extract the following:
+1. "title": The job title (string). If not found, output "Unknown Title".
+2. "company": The company name (string). If not found, output "Unknown Company".
+3. "location": The job location (string). If not found, output "Remote" or "Unknown".
+4. "description": A concise but comprehensive job description (string). Summarize the key responsibilities and requirements.
+
+Respond ONLY with a valid JSON object in the following format:
+{
+  "title": "string",
+  "company": "string",
+  "location": "string",
+  "description": "string"
+}
+
+Raw Content:
+${rawText}
+`;
+        const response = await openai.chat.completions.create({
+            model: process.env.LLM_MODEL || 'gpt-4o-mini',
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.2,
+            response_format: { type: "json_object" }
+        });
+
+        const content = response.choices[0].message.content.trim();
+        return JSON.parse(content);
+    } catch (error) {
+        console.error('LLM Custom Job Parsing error:', error);
+        throw error;
+    }
+}
+
+module.exports = { generateReachoutEmail, generateTailoredApplication, parseRawProfile, parseCustomJobText };

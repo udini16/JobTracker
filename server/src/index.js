@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const { scrapeJobs } = require('./scraper');
-const { generateReachoutEmail, generateTailoredApplication, parseRawProfile } = require('./llm');
+const { generateReachoutEmail, generateTailoredApplication, parseRawProfile, parseCustomJobText } = require('./llm');
 const { sendReachoutEmail } = require('./email');
 const { sendNotification } = require('./telegram');
 
@@ -84,6 +84,51 @@ app.post('/api/parse-profile', async (req, res) => {
         res.json({ success: true, parsedData });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.post('/api/parse-custom-job', async (req, res) => {
+    const { input } = req.body;
+    if (!input) return res.status(400).json({ success: false, error: 'Input is required (URL or raw text)' });
+
+    try {
+        let textContent = input;
+
+        // Simple check if it's a URL
+        if (input.trim().startsWith('http://') || input.trim().startsWith('https://')) {
+            const puppeteer = require('puppeteer');
+            const browser = await puppeteer.launch({ headless: true });
+            const page = await browser.newPage();
+            await page.goto(input.trim(), { waitUntil: 'domcontentloaded', timeout: 15000 });
+            textContent = await page.evaluate(() => document.body.innerText);
+            await browser.close();
+        }
+
+        // Parse with LLM
+        const jobDetails = await parseCustomJobText(textContent);
+
+        // Format as Job Object
+        const newJob = {
+            id: `custom-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+            title: jobDetails.title,
+            company: jobDetails.company,
+            location: jobDetails.location,
+            description: jobDetails.description,
+            url: input.trim().startsWith('http') ? input.trim() : '',
+            source: 'Custom Link/Text',
+            status: 'Scraped',
+            generatedEmail: null,
+            generatedResume: null,
+            generatedCoverLetter: null
+        };
+
+        // Add to store
+        jobsStore = [newJob, ...jobsStore];
+
+        res.json({ success: true, job: newJob, jobs: jobsStore });
+    } catch (error) {
+        console.error('Custom Job Parse Error:', error);
+        res.status(500).json({ success: false, error: 'Failed to parse custom job.' });
     }
 });
 

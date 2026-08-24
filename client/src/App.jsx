@@ -1,14 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import JobSearch from './components/JobSearch';
 import ProfileManager from './components/ProfileManager';
 import OutreachDashboard from './components/OutreachDashboard';
-import { Briefcase, UserCircle, LayoutDashboard } from 'lucide-react';
+import SavedJobs from './components/SavedJobs';
+import { Briefcase, UserCircle, LayoutDashboard, Bookmark } from 'lucide-react';
 
 function App() {
   const [profileData, setProfileData] = useState({ coreDetails: '', projects: [], masterSkills: [] });
   const [jobs, setJobs] = useState([]);
+  const [savedJobs, setSavedJobs] = useState(() => {
+    const local = localStorage.getItem('hermes_saved_jobs');
+    return local ? JSON.parse(local) : [];
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('pipeline');
+
+  useEffect(() => {
+    localStorage.setItem('hermes_saved_jobs', JSON.stringify(savedJobs));
+  }, [savedJobs]);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -29,6 +38,13 @@ function App() {
               Job Pipeline
             </button>
             <button
+              onClick={() => setActiveTab('saved')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'saved' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
+            >
+              <Bookmark className="w-4 h-4" />
+              Saved Jobs
+            </button>
+            <button
               onClick={() => setActiveTab('profile')}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'profile' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
             >
@@ -40,16 +56,22 @@ function App() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === 'pipeline' ? (
+        {activeTab === 'pipeline' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1 space-y-8">
-              <JobSearch onJobsFound={(newJobs) => setJobs(newJobs)} isLoading={isLoading} setIsLoading={setIsLoading} />
+              <JobSearch onJobsFound={(newJobs) => setJobs(newJobs)} isLoading={isLoading} setIsLoading={setIsLoading} setSavedJobs={setSavedJobs} />
             </div>
             <div className="lg:col-span-2">
-              <OutreachDashboard jobs={jobs} setJobs={setJobs} profileData={profileData} />
+              <OutreachDashboard jobs={jobs} setJobs={setJobs} profileData={profileData} setSavedJobs={setSavedJobs} />
             </div>
           </div>
-        ) : (
+        )}
+        {activeTab === 'saved' && (
+          <div className="w-full">
+            <SavedJobs savedJobs={savedJobs} setSavedJobs={setSavedJobs} />
+          </div>
+        )}
+        {activeTab === 'profile' && (
           <div className="w-full">
             <ProfileManager onProfileUpdate={setProfileData} profileData={profileData} />
           </div>

@@ -3,7 +3,7 @@ import { Send, Bot, Mail, CheckCircle2, Eye, Loader2, ExternalLink, FileText, X 
 import axios from 'axios';
 import { marked } from 'marked';
 
-export default function OutreachDashboard({ jobs, setJobs, profileData }) {
+export default function OutreachDashboard({ jobs, setJobs, profileData, setSavedJobs }) {
   const [generatingFor, setGeneratingFor] = useState(null);
   const [tailoringFor, setTailoringFor] = useState(null);
   const [sendingFor, setSendingFor] = useState(null);
@@ -63,6 +63,17 @@ export default function OutreachDashboard({ jobs, setJobs, profileData }) {
       const response = await axios.post('http://localhost:3000/api/generate', { jobId, resumeText: JSON.stringify(profileData) });
       if (response.data.success) {
         setJobs(prev => prev.map(j => j.id === jobId ? response.data.job : j));
+        
+        // Auto-save
+        if (setSavedJobs) {
+          setSavedJobs(prev => {
+            const exists = prev.find(j => j.id === response.data.job.id);
+            if (exists) {
+              return prev.map(j => j.id === response.data.job.id ? response.data.job : j);
+            }
+            return [response.data.job, ...prev];
+          });
+        }
       } else {
         setError(response.data.error);
       }
@@ -106,6 +117,17 @@ export default function OutreachDashboard({ jobs, setJobs, profileData }) {
       if (response.data.success) {
         setJobs(prev => prev.map(j => j.id === jobId ? response.data.job : j));
         setActiveModalJob(response.data.job);
+        
+        // Auto-save
+        if (setSavedJobs) {
+          setSavedJobs(prev => {
+            const exists = prev.find(j => j.id === response.data.job.id);
+            if (exists) {
+              return prev.map(j => j.id === response.data.job.id ? response.data.job : j);
+            }
+            return [response.data.job, ...prev];
+          });
+        }
       } else {
         setError(response.data.error);
       }
