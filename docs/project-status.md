@@ -31,9 +31,13 @@ This document outlines all the features and tasks that have been successfully im
 - **Automated Cold Emails:** Integrated OpenAI LLM to draft highly persuasive, customized outreach emails comparing the user's resume to the job description.
 - **Tailored Resume & CV Generator:** 
   - **Pre-Generation Modal:** Users can select exactly which past projects to include for a specific job application.
-  - **Dynamic Skills Engine:** The system automatically extracts the relevant tech stack from the selected projects and populates them into the prompt.
+  - **Dynamic Skills Engine:** The system automatically extracts the relevant tech stack from the selected projects and populates them into the prompt. Users can also manually toggle Master Skills.
   - **Strict Formatting:** Enforced a traditional, highly professional Resume Markdown format with specific ATS-friendly headers (and zero emojis).
-- **Document Export:** Added the ability to download the generated Resume and Cover Letter directly as `.md` files.
+- **Document Export (PDF):** Converted the markdown logic to use a backend `puppeteer` PDF generator, allowing users to instantly download beautifully formatted PDF resumes and cover letters.
+
+### Custom Jobs & Persistent Storage
+- **Custom Job Parsing:** Built an intelligent endpoint that accepts arbitrary URLs (e.g., Threads, Twitter, Company Sites) or raw text. It navigates to the URL using Puppeteer, extracts the text, and uses the LLM to parse the Job Title, Company, Location, and Description.
+- **Saved Jobs Vault:** Added a persistent "Saved Jobs" tab. Any job manually added via link, or any scraped job that has documents generated for it, is automatically backed up to browser `localStorage` ensuring no work is lost on restart.
 
 ### Email Delivery & Tracking
 - **Email Delivery:** Integrated Resend API for sending actual emails directly to hiring managers.
@@ -55,7 +59,6 @@ While the core MVP is fully functional and highly capable, here are the recommen
 - **Daily Automated Scrapes:** Set up a cron job to automatically scrape new jobs at 8:00 AM every day and send a summary to your Telegram.
 
 ### 3. Application Pipeline Enhancements (Medium Priority)
-- **PDF Export Generation:** Convert the generated Markdown Resume directly into a beautifully formatted, ATS-friendly PDF using a library like `puppeteer` or `react-pdf`.
 - **Kanban Board UI:** Upgrade the Pipeline view from a vertical list to a Trello-style Kanban board (Discovered → Applied → Interviewing → Offered/Rejected).
 - **Automated Follow-ups:** Add logic to automatically send a polite follow-up email if a hiring manager hasn't opened your initial email after 7 days.
 
