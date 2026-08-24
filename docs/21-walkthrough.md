@@ -21,8 +21,9 @@ The backend now supports a massive **8-platform scraping engine**:
 ### 2. Hermes Custom Reachout Email & Document Generator
 When you paste your resume and click "Generate Email" or "Tailor Resume & CV" on a job:
 - The backend sends the job description and your profile data to the **LLM API**.
-- It acts as "Hermes", analyzing the context and writing a highly customized, professional outreach email, resume, and cover letter tailored perfectly to the specific job.
-- **PDF Generation**: You can instantly download your beautifully formatted Resume and Cover Letter as ATS-friendly PDFs, generated flawlessly on the backend using Puppeteer.
+- It acts as "Hermes", analyzing the context and writing a highly customized, professional outreach email, CV, and cover letter tailored perfectly to the specific job.
+- **Editable Documents**: The generated CV and Cover Letter are fully editable right inside the browser modal. You can tweak the generated text before downloading, and your edits will be permanently saved.
+- **PDF Generation**: You can instantly download your beautifully formatted CV and Cover Letter as ATS-friendly PDFs, generated flawlessly on the backend using Puppeteer.
 
 ### 3. Custom Jobs & Saved Jobs Vault
 - **Parse from Links:** Found a job on a random site like Threads or Twitter? Just paste the URL into the "Add Custom Job" tool. The backend visits the link, extracts the text, and intelligently parses the job details right into your pipeline.

@@ -246,7 +246,7 @@ export default function OutreachDashboard({ jobs, setJobs, profileData, setSaved
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
               >
                 {tailoringFor === job.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
-                Tailor Resume & CV
+                Tailor CV
               </button>
 
               {job.generatedResume && (
@@ -286,13 +286,13 @@ export default function OutreachDashboard({ jobs, setJobs, profileData, setSaved
             <div className="p-6 overflow-y-auto flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div className="flex justify-between items-center border-b pb-2">
-                  <h4 className="font-semibold text-slate-700 flex items-center gap-2"><FileText className="w-4 h-4"/> Tailored Resume</h4>
-                  <button onClick={() => downloadPDF(activeModalJob.generatedResume, `${activeModalJob.company.replace(/\s+/g, '_')}_Resume.pdf`)} className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1">Download .pdf</button>
+                  <h4 className="font-semibold text-slate-700 flex items-center gap-2"><FileText className="w-4 h-4"/> Tailored CV</h4>
+                  <button onClick={() => downloadPDF(activeModalJob.generatedResume, `${activeModalJob.company.replace(/\s+/g, '_')}_CV.pdf`)} className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1">Download .pdf</button>
                 </div>
                 <textarea 
-                  className="w-full h-[500px] p-4 text-sm font-mono text-slate-800 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50"
-                  defaultValue={activeModalJob.generatedResume}
-                  readOnly
+                  className="w-full h-[500px] p-4 text-sm font-mono text-slate-800 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                  value={activeModalJob.generatedResume}
+                  onChange={(e) => setActiveModalJob(prev => ({ ...prev, generatedResume: e.target.value }))}
                 />
               </div>
               <div className="space-y-4">
@@ -301,15 +301,33 @@ export default function OutreachDashboard({ jobs, setJobs, profileData, setSaved
                   <button onClick={() => downloadPDF(activeModalJob.generatedCoverLetter, `${activeModalJob.company.replace(/\s+/g, '_')}_CoverLetter.pdf`)} className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1">Download .pdf</button>
                 </div>
                 <textarea 
-                  className="w-full h-[500px] p-4 text-sm font-mono text-slate-800 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50"
-                  defaultValue={activeModalJob.generatedCoverLetter}
-                  readOnly
+                  className="w-full h-[500px] p-4 text-sm font-mono text-slate-800 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                  value={activeModalJob.generatedCoverLetter}
+                  onChange={(e) => setActiveModalJob(prev => ({ ...prev, generatedCoverLetter: e.target.value }))}
                 />
               </div>
             </div>
-            <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 rounded-b-xl flex justify-end">
-              <button onClick={() => setActiveModalJob(null)} className="px-4 py-2 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors">
-                Close
+            <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 rounded-b-xl flex justify-end gap-3">
+              <button onClick={() => setActiveModalJob(null)} className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg font-medium hover:bg-slate-300 transition-colors">
+                Cancel
+              </button>
+              <button 
+                onClick={() => {
+                  setJobs(prev => prev.map(j => j.id === activeModalJob.id ? activeModalJob : j));
+                  if (setSavedJobs) {
+                    setSavedJobs(prev => {
+                      const exists = prev.find(j => j.id === activeModalJob.id);
+                      if (exists) {
+                        return prev.map(j => j.id === activeModalJob.id ? activeModalJob : j);
+                      }
+                      return prev;
+                    });
+                  }
+                  setActiveModalJob(null);
+                }} 
+                className="px-4 py-2 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors"
+              >
+                Save Changes
               </button>
             </div>
           </div>
@@ -320,7 +338,7 @@ export default function OutreachDashboard({ jobs, setJobs, profileData, setSaved
         <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
             <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl">
-              <h3 className="text-lg font-bold text-slate-900">Tailor Resume Settings</h3>
+              <h3 className="text-lg font-bold text-slate-900">Tailor CV Settings</h3>
               <button onClick={() => setShowPreGenFor(null)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-5 h-5" />
               </button>

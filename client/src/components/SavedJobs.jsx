@@ -1,9 +1,11 @@
-import React from 'react';
-import { Bookmark, Building2, MapPin, ExternalLink, Trash2, Mail, FileText } from 'lucide-react';
+import React, { useState } from 'react';
+import { Bookmark, Building2, MapPin, ExternalLink, Trash2, Mail, FileText, Eye, X } from 'lucide-react';
 import { marked } from 'marked';
 import axios from 'axios';
 
 export default function SavedJobs({ savedJobs, setSavedJobs }) {
+  const [activeModalJob, setActiveModalJob] = useState(null);
+
   const removeSavedJob = (id) => {
     setSavedJobs(prev => prev.filter(job => job.id !== id));
   };
@@ -107,7 +109,14 @@ export default function SavedJobs({ savedJobs, setSavedJobs }) {
             </div>
 
             {(job.generatedEmail || job.generatedResume || job.generatedCoverLetter) && (
-              <div className="mt-4 pt-4 border-t border-slate-100 flex flex-wrap gap-4">
+              <div className="mt-4 pt-4 border-t border-slate-100 flex flex-wrap items-center gap-4">
+                <button
+                  onClick={() => setActiveModalJob(job)}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-xs font-medium transition-colors mr-2"
+                >
+                  <Eye className="w-3 h-3" />
+                  View / Edit Docs
+                </button>
                 {job.generatedEmail && (
                   <div className="flex flex-col gap-1">
                     <span className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1"><Mail className="w-3 h-3"/> Email</span>
@@ -116,8 +125,8 @@ export default function SavedJobs({ savedJobs, setSavedJobs }) {
                 )}
                 {job.generatedResume && (
                   <div className="flex flex-col gap-1">
-                    <span className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1"><FileText className="w-3 h-3"/> Resume</span>
-                    <button onClick={() => downloadPDF(job.generatedResume, `${job.company.replace(/\\s+/g, '_')}_Resume.pdf`)} className="text-xs text-indigo-600 hover:underline">Download PDF</button>
+                    <span className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1"><FileText className="w-3 h-3"/> CV</span>
+                    <button onClick={() => downloadPDF(job.generatedResume, `${job.company.replace(/\\s+/g, '_')}_CV.pdf`)} className="text-xs text-indigo-600 hover:underline">Download PDF</button>
                   </div>
                 )}
                 {job.generatedCoverLetter && (
@@ -131,6 +140,57 @@ export default function SavedJobs({ savedJobs, setSavedJobs }) {
           </div>
         ))}
       </div>
+
+      {activeModalJob && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-5xl max-h-[90vh] flex flex-col">
+            <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl">
+              <h3 className="text-lg font-bold text-slate-900">Application Documents for {activeModalJob.company}</h3>
+              <button onClick={() => setActiveModalJob(null)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center border-b pb-2">
+                  <h4 className="font-semibold text-slate-700 flex items-center gap-2"><FileText className="w-4 h-4"/> Tailored CV</h4>
+                  <button onClick={() => downloadPDF(activeModalJob.generatedResume, `${activeModalJob.company.replace(/\\s+/g, '_')}_CV.pdf`)} className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1">Download .pdf</button>
+                </div>
+                <textarea 
+                  className="w-full h-[500px] p-4 text-sm font-mono text-slate-800 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                  value={activeModalJob.generatedResume}
+                  onChange={(e) => setActiveModalJob(prev => ({ ...prev, generatedResume: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center border-b pb-2">
+                  <h4 className="font-semibold text-slate-700 flex items-center gap-2"><Mail className="w-4 h-4"/> Cover Letter</h4>
+                  <button onClick={() => downloadPDF(activeModalJob.generatedCoverLetter, `${activeModalJob.company.replace(/\\s+/g, '_')}_CoverLetter.pdf`)} className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1">Download .pdf</button>
+                </div>
+                <textarea 
+                  className="w-full h-[500px] p-4 text-sm font-mono text-slate-800 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                  value={activeModalJob.generatedCoverLetter}
+                  onChange={(e) => setActiveModalJob(prev => ({ ...prev, generatedCoverLetter: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 rounded-b-xl flex justify-end gap-3">
+              <button onClick={() => setActiveModalJob(null)} className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg font-medium hover:bg-slate-300 transition-colors">
+                Cancel
+              </button>
+              <button 
+                onClick={() => {
+                  setSavedJobs(prev => prev.map(j => j.id === activeModalJob.id ? activeModalJob : j));
+                  setActiveModalJob(null);
+                }} 
+                className="px-4 py-2 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
