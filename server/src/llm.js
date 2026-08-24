@@ -101,13 +101,42 @@ ${companyName}
 CRITICAL INSTRUCTIONS:
 1. DO NOT USE ANY EMOJIS in the Resume or the Cover Letter. None. Zero emojis.
 2. The tone must be highly professional, corporate, and traditional.
-3. Generate a tailored Markdown Resume. You MUST use exactly these headings and no others: 
-   - [Header: Name and Contact Info]
-   - SKILLS
-   - EDUCATION
-   - PROFESSIONAL EXPERIENCE
-   - TECHNICAL PROJECTS
-   - CERTIFICATIONS
+3. Generate a tailored Markdown CV following this exact template structure (skip sections where candidate data is not provided, e.g., if no Awards are present, skip the Awards section). Ensure the Markdown looks visually clean:
+
+[Name]
+[City and State] | [Phone number] | [Email address] | [GitHub/Portfolio]
+
+# Education
+[Type of degree], [Major and minor]
+[Name of school] | [Dates of attendance]
+[Thesis, dissertation or relevant coursework, if applicable]
+
+# Certifications
+[Certification name], [Issuing organization] | [Date of completion]
+
+# Professional Experience
+[Job title], [Name of organization or employer] | [Start date – end date]
+[Brief description of impactful achievement. Use short phrases or bullet points to remain as concise and readable as possible.]
+
+# Technical Projects
+[Project Title]
+[Brief description of the project and skills used]
+
+# Skills
+[List skills using bullet points]
+
+# Awards and honors
+[Name of award], [Issuing organization], [Year received]
+
+# Professional memberships or affiliations
+[Your role], [Full name of organization] [Year joined – Current, if applicable]
+
+# Publications
+[Authors list (bold your name), (Year). "Title," Publication name, volume/page numbers.]
+
+# Conference presentations
+["Presentation title," Conference name, Month, Year]
+
 4. Highlight the skills and experiences from the master profile that best match the job description. Do not invent new experiences.
 5. Generate a professional Cover Letter connecting the candidate's tailored resume to the specific requirements of the job. No emojis.
 6. Output the tailored resume inside <RESUME> tags and the cover letter inside <COVER_LETTER> tags.
