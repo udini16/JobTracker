@@ -143,10 +143,7 @@ app.post('/api/parse-custom-job', async (req, res) => {
     }
 });
 
-app.post('/api/send', async (req, res) => {
-    const { jobId } = req.body;
-    let job = jobsStore.find(j => j.id === jobId);
-    if (!job && req.body.job) {
+
 async function generatePdfBuffer(html) {
     const puppeteer = require('puppeteer');
     const browser = await puppeteer.launch({ headless: true });

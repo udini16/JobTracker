@@ -299,70 +299,75 @@ export default function OutreachDashboard({ jobs, setJobs, profileData, setSaved
               <p className="text-sm text-slate-500 mt-2 line-clamp-2">{job.description}</p>
             )}
 
-            <div className="mt-6 flex items-center gap-3">
-              {!job.generatedEmail && (
-                <button
-                  onClick={() => generateEmail(job.id)}
-                  disabled={generatingFor === job.id}
-                  className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-                >
-                  {generatingFor === job.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bot className="w-4 h-4" />}
-                  Generate Hermes Email
-                </button>
-              )}
-
-              <button
-                onClick={() => handleTailorClick(job.id)}
-                disabled={tailoringFor === job.id}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-              >
-                {tailoringFor === job.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
-                Tailor CV
-              </button>
-
-              {job.generatedResume && (
-                <button
-                  onClick={() => setActiveModalJob(job)}
-                  className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-sm font-medium transition-colors"
-                >
-                  <Eye className="w-4 h-4" />
-                  View Docs
-                </button>
-              )}
-              
-              {job.generatedEmail && job.status !== 'Sent' && job.status !== 'Opened' && (
-                <div className="flex flex-col gap-3 w-full mt-2 border-t border-slate-100 pt-4">
-                  <h4 className="text-sm font-semibold text-slate-700">Attachments</h4>
-                  <div className="flex flex-wrap items-center gap-4">
-                    {job.generatedResume && (
-                      <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
-                        <input type="checkbox" checked={attachments[job.id]?.attachCV || false} onChange={(e) => setAttachments(prev => ({ ...prev, [job.id]: { ...prev[job.id], attachCV: e.target.checked } }))} />
-                        Attach Tailored CV
-                      </label>
-                    )}
-                    {job.generatedCoverLetter && (
-                      <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
-                        <input type="checkbox" checked={attachments[job.id]?.attachCL || false} onChange={(e) => setAttachments(prev => ({ ...prev, [job.id]: { ...prev[job.id], attachCL: e.target.checked } }))} />
-                        Attach Tailored Cover Letter
-                      </label>
-                    )}
-                    <div className="flex items-center gap-2 border-l border-slate-200 pl-4">
-                      <span className="text-sm text-slate-600">Custom PDF:</span>
-                      <input type="file" accept=".pdf" className="text-sm text-slate-600 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200" onChange={(e) => setAttachments(prev => ({ ...prev, [job.id]: { ...prev[job.id], customFile: e.target.files[0] } }))} />
+            <div className="mt-6 pt-4 border-t border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+              <div className="flex-1">
+                {job.generatedEmail && job.status !== 'Sent' && job.status !== 'Opened' && (
+                  <div className="flex flex-col gap-3">
+                    <h4 className="text-sm font-semibold text-slate-700">Attachments</h4>
+                    <div className="flex flex-col gap-2">
+                      {job.generatedResume && (
+                        <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+                          <input type="checkbox" checked={attachments[job.id]?.attachCV || false} onChange={(e) => setAttachments(prev => ({ ...prev, [job.id]: { ...prev[job.id], attachCV: e.target.checked } }))} />
+                          Attach Tailored CV
+                        </label>
+                      )}
+                      {job.generatedCoverLetter && (
+                        <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+                          <input type="checkbox" checked={attachments[job.id]?.attachCL || false} onChange={(e) => setAttachments(prev => ({ ...prev, [job.id]: { ...prev[job.id], attachCL: e.target.checked } }))} />
+                          Attach Tailored Cover Letter
+                        </label>
+                      )}
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-sm text-slate-600">Custom PDF:</span>
+                        <input type="file" accept=".pdf" className="text-sm text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200" onChange={(e) => setAttachments(prev => ({ ...prev, [job.id]: { ...prev[job.id], customFile: e.target.files[0] } }))} />
+                      </div>
                     </div>
                   </div>
-                  <div className="mt-2 flex">
-                    <button
-                      onClick={() => sendEmail(job.id)}
-                      disabled={sendingFor === job.id}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-                    >
-                      {sendingFor === job.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                      Send Email via Resend
-                    </button>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                {!job.generatedEmail && (
+                  <button
+                    onClick={() => generateEmail(job.id)}
+                    disabled={generatingFor === job.id}
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                  >
+                    {generatingFor === job.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bot className="w-4 h-4" />}
+                    Generate Hermes Email
+                  </button>
+                )}
+
+                <button
+                  onClick={() => handleTailorClick(job.id)}
+                  disabled={tailoringFor === job.id}
+                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                >
+                  {tailoringFor === job.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                  Tailor CV
+                </button>
+
+                {job.generatedResume && (
+                  <button
+                    onClick={() => setActiveModalJob(job)}
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    <Eye className="w-4 h-4" />
+                    View Docs
+                  </button>
+                )}
+                
+                {job.generatedEmail && job.status !== 'Sent' && job.status !== 'Opened' && (
+                  <button
+                    onClick={() => sendEmail(job.id)}
+                    disabled={sendingFor === job.id}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                  >
+                    {sendingFor === job.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    Send Email via Resend
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         ))}

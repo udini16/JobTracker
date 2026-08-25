@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bookmark, Building2, MapPin, ExternalLink, Trash2, Mail, FileText, Eye, X, Loader2, Bot } from 'lucide-react';
+import { Bookmark, Building2, MapPin, ExternalLink, Trash2, Mail, FileText, Eye, X, Loader2, Bot, Send } from 'lucide-react';
 import { marked } from 'marked';
 import axios from 'axios';
 
@@ -8,7 +8,8 @@ export default function SavedJobs({ savedJobs, setSavedJobs }) {
   const [generatingFor, setGeneratingFor] = useState(null);
   const [error, setError] = useState('');
   const [expandedEmails, setExpandedEmails] = useState({});
-
+  const [attachments, setAttachments] = useState({});
+  const [sendingFor, setSendingFor] = useState(null);
   const removeSavedJob = (id) => {
     setSavedJobs(prev => prev.filter(job => job.id !== id));
   };
@@ -48,6 +49,83 @@ export default function SavedJobs({ savedJobs, setSavedJobs }) {
       </body>
       </html>
     `;
+
+    try {
+      const response = await axios.post('http://localhost:3000/api/generate-pdf', { html: fullHtml }, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error('PDF download failed', err);
+      alert('Failed to generate PDF');
+    }
+  };
+
+  const buildPdfHtml = (content) => {
+    if (!content) return '';
+    const htmlContent = marked.parse(content);
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; color: #333; line-height: 1.6; padding: 20px; }
+          h1, h2, h3 { color: #111; margin-bottom: 10px; margin-top: 20px; }
+          p { margin-bottom: 15px; }
+          ul, ol { margin-bottom: 15px; padding-left: 20px; }
+          li { margin-bottom: 5px; }
+          strong { font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        ${htmlContent}
+      </body>
+      </html>
+    `;
+  };
+
+  const sendEmail = async (jobId) => {
+    setError('');
+    setSendingFor(jobId);
+    
+    try {
+      const job = savedJobs.find(j => j.id === jobId);
+      const jobAttachments = attachments[jobId] || {};
+      
+      const formData = new FormData();
+      formData.append('jobId', jobId);
+      formData.append('job', JSON.stringify(job));
+      
+      if (jobAttachments.attachCV && job.generatedResume) {
+        formData.append('cvHtml', buildPdfHtml(job.generatedResume));
+      }
+      if (jobAttachments.attachCL && job.generatedCoverLetter) {
+        formData.append('clHtml', buildPdfHtml(job.generatedCoverLetter));
+      }
+      if (jobAttachments.customFile) {
+        formData.append('customFile', jobAttachments.customFile);
+      }
+
+      const response = await axios.post('http://localhost:3000/api/send', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      if (response.data.success) {
+        setSavedJobs(prev => prev.map(j => j.id === jobId ? response.data.job : j));
+      } else {
+        setError(response.data.error || 'Failed to send email');
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSendingFor(null);
+    }
+  };
 
     try {
       const response = await axios.post('http://localhost:3000/api/generate-pdf', { html: fullHtml }, { responseType: 'blob' });
@@ -172,50 +250,84 @@ export default function SavedJobs({ savedJobs, setSavedJobs }) {
               </div>
             )}
 
-            <div className="mt-4 pt-4 border-t border-slate-100 flex flex-wrap items-center gap-4">
-              {!job.generatedEmail && (
-                <button
-                  onClick={() => generateEmail(job.id)}
-                  disabled={generatingFor === job.id}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
-                >
-                  {generatingFor === job.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Bot className="w-3 h-3" />}
-                  Generate Hermes Email
-                </button>
-              )}
+            <div className="mt-6 pt-4 border-t border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+              <div className="flex-1">
+                {job.generatedEmail && job.status !== 'Sent' && job.status !== 'Opened' && expandedEmails[job.id] && (
+                  <div className="flex flex-col gap-3">
+                    <h4 className="text-sm font-semibold text-slate-700">Attachments</h4>
+                    <div className="flex flex-col gap-2">
+                      {job.generatedResume && (
+                        <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+                          <input type="checkbox" checked={attachments[job.id]?.attachCV || false} onChange={(e) => setAttachments(prev => ({ ...prev, [job.id]: { ...prev[job.id], attachCV: e.target.checked } }))} />
+                          Attach Tailored CV
+                        </label>
+                      )}
+                      {job.generatedCoverLetter && (
+                        <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+                          <input type="checkbox" checked={attachments[job.id]?.attachCL || false} onChange={(e) => setAttachments(prev => ({ ...prev, [job.id]: { ...prev[job.id], attachCL: e.target.checked } }))} />
+                          Attach Tailored Cover Letter
+                        </label>
+                      )}
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-sm text-slate-600">Custom PDF:</span>
+                        <input type="file" accept=".pdf" className="text-sm text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200" onChange={(e) => setAttachments(prev => ({ ...prev, [job.id]: { ...prev[job.id], customFile: e.target.files[0] } }))} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
 
-              {job.generatedEmail && (
-                <button
-                  onClick={() => setExpandedEmails(prev => ({ ...prev, [job.id]: !prev[job.id] }))}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-medium transition-colors"
-                >
-                  <Mail className="w-3 h-3" />
-                  {expandedEmails[job.id] ? 'Hide Draft Email' : 'See draft email generated by Hermes'}
-                </button>
-              )}
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                {!job.generatedEmail && (
+                  <button
+                    onClick={() => generateEmail(job.id)}
+                    disabled={generatingFor === job.id}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+                  >
+                    {generatingFor === job.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Bot className="w-3 h-3" />}
+                    Generate Hermes Email
+                  </button>
+                )}
 
-              {(job.generatedEmail || job.generatedResume || job.generatedCoverLetter) && (
-                <button
-                  onClick={() => setActiveModalJob(job)}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-xs font-medium transition-colors mr-2"
-                >
-                  <Eye className="w-3 h-3" />
-                  View / Edit Docs
-                </button>
-              )}
+                {job.generatedEmail && (
+                  <button
+                    onClick={() => setExpandedEmails(prev => ({ ...prev, [job.id]: !prev[job.id] }))}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-medium transition-colors"
+                  >
+                    <Mail className="w-3 h-3" />
+                    {expandedEmails[job.id] ? 'Hide Draft Email' : 'See draft email generated by Hermes'}
+                  </button>
+                )}
 
-              {job.generatedResume && (
-                <div className="flex flex-col gap-1">
-                  <span className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1"><FileText className="w-3 h-3" /> CV</span>
-                  <button onClick={() => downloadPDF(job.generatedResume, `${job.company.replace(/\\s+/g, '_')}_CV.pdf`)} className="text-xs text-indigo-600 hover:underline">Download PDF</button>
-                </div>
-              )}
-              {job.generatedCoverLetter && (
-                <div className="flex flex-col gap-1">
-                  <span className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1"><FileText className="w-3 h-3" /> Cover Letter</span>
-                  <button onClick={() => downloadPDF(job.generatedCoverLetter, `${job.company.replace(/\\s+/g, '_')}_CoverLetter.pdf`)} className="text-xs text-indigo-600 hover:underline">Download PDF</button>
-                </div>
-              )}
+                {(job.generatedEmail || job.generatedResume || job.generatedCoverLetter) && (
+                  <button
+                    onClick={() => setActiveModalJob(job)}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-xs font-medium transition-colors"
+                  >
+                    <Eye className="w-3 h-3" />
+                    View / Edit Docs
+                  </button>
+                )}
+                
+                {job.generatedResume && (
+                  <button onClick={() => downloadPDF(job.generatedResume, `${job.company.replace(/\\s+/g, '_')}_CV.pdf`)} className="text-xs font-medium text-indigo-600 hover:underline">Download CV PDF</button>
+                )}
+                
+                {job.generatedCoverLetter && (
+                  <button onClick={() => downloadPDF(job.generatedCoverLetter, `${job.company.replace(/\\s+/g, '_')}_CoverLetter.pdf`)} className="text-xs font-medium text-indigo-600 hover:underline">Download CL PDF</button>
+                )}
+
+                {job.generatedEmail && job.status !== 'Sent' && job.status !== 'Opened' && (
+                  <button
+                    onClick={() => sendEmail(job.id)}
+                    disabled={sendingFor === job.id}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ml-2"
+                  >
+                    {sendingFor === job.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    Send Email via Resend
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         ))}
