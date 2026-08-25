@@ -18,6 +18,13 @@ The backend now supports a massive **8-platform scraping engine**:
 - **Regional/Specialty**: Google Jobs, Bayt, Naukri, and MauKerja are supported via custom Puppeteer fallback scrapers.
 - **Frontend Integration**: You can multi-select any combination of these 8 platforms directly from the React UI before searching!
 
+## Features Overview
+
+### 1. Profile Manager
+- **Centralized Data Hub:** This is where you configure your core professional identity—Biodata, Education, Experience, Projects, Skills, and Certifications.
+- **Editable Entries:** You can edit existing Education, Experience, and Project entries by clicking the pencil icon, loading the data back into the form for quick updates.
+- **Auto-Parse Tool:** If you have an unstructured text resume, simply paste it in the "Auto-Parse Resume" modal. The backend uses the LLM to intelligently extract and populate all your structured profile sections instantly.
+
 ### 2. Hermes Custom Reachout Email & Document Generator
 When you paste your resume and click "Generate Email" or "Tailor Resume & CV" on a job:
 - The backend sends the job description and your profile data to the **LLM API**.

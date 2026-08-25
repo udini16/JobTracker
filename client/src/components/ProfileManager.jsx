@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { UserCircle, Code, Briefcase, Plus, Trash2, Wand2, Loader2, GraduationCap, FileText, Award, X } from 'lucide-react';
+import { UserCircle, Code, Briefcase, Plus, Trash2, Wand2, Loader2, GraduationCap, FileText, Award, X, Pencil } from 'lucide-react';
 import axios from 'axios';
 
 export default function ProfileManager({ onProfileUpdate, profileData }) {
@@ -16,6 +16,11 @@ export default function ProfileManager({ onProfileUpdate, profileData }) {
   const [newProject, setNewProject] = useState({ title: '', description: '', techStack: '' });
   const [newEdu, setNewEdu] = useState({ university: '', degree: '', cgpa: '', courses: '' });
   const [newExp, setNewExp] = useState({ company: '', location: '', role: '', startDate: '', endDate: '', description: '' });
+
+  // Editing States
+  const [editingEduId, setEditingEduId] = useState(null);
+  const [editingExpId, setEditingExpId] = useState(null);
+  const [editingProjId, setEditingProjId] = useState(null);
 
   // Parsing Modal State
   const [showParseModal, setShowParseModal] = useState(false);
@@ -82,9 +87,16 @@ export default function ProfileManager({ onProfileUpdate, profileData }) {
     e.preventDefault();
     if (!newEdu.university.trim() || !newEdu.degree.trim()) return;
     
-    const coursesArray = newEdu.courses.split(',').map(s => s.trim()).filter(s => s);
-    const edu = { id: Date.now().toString(), ...newEdu, courses: coursesArray };
-    const updated = [...education, edu];
+    const coursesArray = typeof newEdu.courses === 'string' ? newEdu.courses.split(',').map(s => s.trim()).filter(s => s) : newEdu.courses;
+    
+    let updated;
+    if (editingEduId) {
+      updated = education.map(edu => edu.id === editingEduId ? { ...newEdu, id: editingEduId, courses: coursesArray } : edu);
+      setEditingEduId(null);
+    } else {
+      const edu = { id: Date.now().toString(), ...newEdu, courses: coursesArray };
+      updated = [...education, edu];
+    }
     
     setEducation(updated);
     setNewEdu({ university: '', degree: '', cgpa: '', courses: '' });
@@ -94,6 +106,15 @@ export default function ProfileManager({ onProfileUpdate, profileData }) {
     const updated = education.filter(e => e.id !== id);
     setEducation(updated);
     saveToLocal({ education: updated });
+    if (editingEduId === id) cancelEditEducation();
+  };
+  const startEditEducation = (edu) => {
+    setNewEdu({ ...edu, courses: (edu.courses || []).join(', ') });
+    setEditingEduId(edu.id);
+  };
+  const cancelEditEducation = () => {
+    setEditingEduId(null);
+    setNewEdu({ university: '', degree: '', cgpa: '', courses: '' });
   };
 
   // EXPERIENCE Handlers
@@ -101,8 +122,14 @@ export default function ProfileManager({ onProfileUpdate, profileData }) {
     e.preventDefault();
     if (!newExp.company.trim() || !newExp.role.trim()) return;
     
-    const exp = { id: Date.now().toString(), ...newExp };
-    const updated = [...experience, exp];
+    let updated;
+    if (editingExpId) {
+      updated = experience.map(exp => exp.id === editingExpId ? { ...newExp, id: editingExpId } : exp);
+      setEditingExpId(null);
+    } else {
+      const exp = { id: Date.now().toString(), ...newExp };
+      updated = [...experience, exp];
+    }
     
     setExperience(updated);
     setNewExp({ company: '', location: '', role: '', startDate: '', endDate: '', description: '' });
@@ -112,6 +139,15 @@ export default function ProfileManager({ onProfileUpdate, profileData }) {
     const updated = experience.filter(e => e.id !== id);
     setExperience(updated);
     saveToLocal({ experience: updated });
+    if (editingExpId === id) cancelEditExperience();
+  };
+  const startEditExperience = (exp) => {
+    setNewExp({ ...exp });
+    setEditingExpId(exp.id);
+  };
+  const cancelEditExperience = () => {
+    setEditingExpId(null);
+    setNewExp({ company: '', location: '', role: '', startDate: '', endDate: '', description: '' });
   };
 
   // SKILLS Handlers
@@ -134,9 +170,17 @@ export default function ProfileManager({ onProfileUpdate, profileData }) {
   const addProject = (e) => {
     e.preventDefault();
     if (!newProject.title.trim() || !newProject.description.trim()) return;
-    const techArray = newProject.techStack.split(',').map(s => s.trim()).filter(s => s);
-    const proj = { id: Date.now().toString(), title: newProject.title, description: newProject.description, skills: techArray };
-    const updated = [...projects, proj];
+    const techArray = typeof newProject.techStack === 'string' ? newProject.techStack.split(',').map(s => s.trim()).filter(s => s) : newProject.techStack;
+    
+    let updated;
+    if (editingProjId) {
+      updated = projects.map(proj => proj.id === editingProjId ? { ...newProject, id: editingProjId, skills: techArray } : proj);
+      setEditingProjId(null);
+    } else {
+      const proj = { id: Date.now().toString(), title: newProject.title, description: newProject.description, skills: techArray };
+      updated = [...projects, proj];
+    }
+
     setProjects(updated);
     setNewProject({ title: '', description: '', techStack: '' });
     saveToLocal({ projects: updated });
@@ -145,6 +189,15 @@ export default function ProfileManager({ onProfileUpdate, profileData }) {
     const updated = projects.filter(p => p.id !== id);
     setProjects(updated);
     saveToLocal({ projects: updated });
+    if (editingProjId === id) cancelEditProject();
+  };
+  const startEditProject = (proj) => {
+    setNewProject({ ...proj, techStack: (proj.skills || []).join(', ') });
+    setEditingProjId(proj.id);
+  };
+  const cancelEditProject = () => {
+    setEditingProjId(null);
+    setNewProject({ title: '', description: '', techStack: '' });
   };
 
   // AUTO-PARSE Logic
@@ -312,16 +365,28 @@ export default function ProfileManager({ onProfileUpdate, profileData }) {
               <input type="text" className="w-full p-2 text-sm border border-slate-300 rounded-lg" placeholder="CGPA (e.g. 3.8/4.0)" value={newEdu.cgpa} onChange={(e) => setNewEdu({...newEdu, cgpa: e.target.value})} />
             </div>
             <input type="text" className="w-full p-2 text-sm border border-slate-300 rounded-lg" placeholder="Relevant Coursework (comma separated)" value={newEdu.courses} onChange={(e) => setNewEdu({...newEdu, courses: e.target.value})} />
-            <button type="submit" className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium flex items-center gap-1">
-              <Plus className="w-4 h-4" /> Add Education
-            </button>
+            <div className="flex gap-2">
+              <button type="submit" className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium flex items-center gap-1">
+                {editingEduId ? 'Save Changes' : <><Plus className="w-4 h-4" /> Add Education</>}
+              </button>
+              {editingEduId && (
+                <button type="button" onClick={cancelEditEducation} className="px-3 py-1.5 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 text-sm font-medium">
+                  Cancel
+                </button>
+              )}
+            </div>
           </form>
           <div className="space-y-3 flex-1 overflow-y-auto max-h-[300px]">
             {education.map(edu => (
-              <div key={edu.id} className="border border-slate-200 rounded-lg p-3 relative group text-sm">
-                <button onClick={() => removeEducation(edu.id)} className="absolute top-3 right-3 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100">
-                  <Trash2 className="w-4 h-4" />
-                </button>
+              <div key={edu.id} className={`border ${editingEduId === edu.id ? 'border-indigo-400 bg-indigo-50' : 'border-slate-200'} rounded-lg p-3 relative group text-sm transition-colors`}>
+                <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={() => startEditEducation(edu)} className="text-slate-400 hover:text-indigo-600">
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => removeEducation(edu.id)} className="text-slate-400 hover:text-red-500">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
                 <div className="font-semibold text-slate-800">{edu.university}</div>
                 <div className="text-slate-600">{edu.degree} {edu.cgpa ? ` • CGPA: ${edu.cgpa}` : ''}</div>
                 {edu.courses && edu.courses.length > 0 && (
@@ -350,16 +415,28 @@ export default function ProfileManager({ onProfileUpdate, profileData }) {
               <input type="text" className="w-full p-2 text-sm border border-slate-300 rounded-lg" placeholder="End Date" value={newExp.endDate} onChange={(e) => setNewExp({...newExp, endDate: e.target.value})} />
             </div>
             <textarea required className="w-full p-2 text-sm border border-slate-300 rounded-lg h-20 resize-y" placeholder="Describe what you have done there (bullet points recommended)" value={newExp.description} onChange={(e) => setNewExp({...newExp, description: e.target.value})} />
-            <button type="submit" className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium flex items-center gap-1">
-              <Plus className="w-4 h-4" /> Add Experience
-            </button>
+            <div className="flex gap-2">
+              <button type="submit" className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium flex items-center gap-1">
+                {editingExpId ? 'Save Changes' : <><Plus className="w-4 h-4" /> Add Experience</>}
+              </button>
+              {editingExpId && (
+                <button type="button" onClick={cancelEditExperience} className="px-3 py-1.5 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 text-sm font-medium">
+                  Cancel
+                </button>
+              )}
+            </div>
           </form>
           <div className="space-y-3 flex-1 overflow-y-auto max-h-[400px]">
             {experience.map(exp => (
-              <div key={exp.id} className="border border-slate-200 rounded-lg p-3 relative group text-sm">
-                <button onClick={() => removeExperience(exp.id)} className="absolute top-3 right-3 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100">
-                  <Trash2 className="w-4 h-4" />
-                </button>
+              <div key={exp.id} className={`border ${editingExpId === exp.id ? 'border-emerald-400 bg-emerald-50' : 'border-slate-200'} rounded-lg p-3 relative group text-sm transition-colors`}>
+                <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={() => startEditExperience(exp)} className="text-slate-400 hover:text-emerald-600">
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => removeExperience(exp.id)} className="text-slate-400 hover:text-red-500">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
                 <div className="font-semibold text-slate-800">{exp.role} @ {exp.company}</div>
                 <div className="text-slate-500 text-xs mb-2">{exp.location ? `${exp.location} | ` : ''}{exp.startDate} - {exp.endDate}</div>
                 <div className="text-slate-600 whitespace-pre-wrap">{exp.description}</div>
@@ -378,16 +455,28 @@ export default function ProfileManager({ onProfileUpdate, profileData }) {
             <input required type="text" className="w-full p-2 text-sm border border-slate-300 rounded-lg" placeholder="Project Title" value={newProject.title} onChange={(e) => setNewProject({...newProject, title: e.target.value})} />
             <textarea required className="w-full p-2 text-sm border border-slate-300 rounded-lg h-20 resize-y" placeholder="Detailed bullet points describing the project..." value={newProject.description} onChange={(e) => setNewProject({...newProject, description: e.target.value})} />
             <input type="text" className="w-full p-2 text-sm border border-slate-300 rounded-lg" placeholder="Tech Stack (comma separated)" value={newProject.techStack} onChange={(e) => setNewProject({...newProject, techStack: e.target.value})} />
-            <button type="submit" className="px-3 py-1.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 text-sm font-medium flex items-center gap-1">
-              <Plus className="w-4 h-4" /> Add Project
-            </button>
+            <div className="flex gap-2">
+              <button type="submit" className="px-3 py-1.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 text-sm font-medium flex items-center gap-1">
+                {editingProjId ? 'Save Changes' : <><Plus className="w-4 h-4" /> Add Project</>}
+              </button>
+              {editingProjId && (
+                <button type="button" onClick={cancelEditProject} className="px-3 py-1.5 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 text-sm font-medium">
+                  Cancel
+                </button>
+              )}
+            </div>
           </form>
           <div className="space-y-3 flex-1 overflow-y-auto max-h-[400px]">
             {projects.map(proj => (
-              <div key={proj.id} className="border border-slate-200 rounded-lg p-3 relative group text-sm">
-                <button onClick={() => removeProject(proj.id)} className="absolute top-3 right-3 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100">
-                  <Trash2 className="w-4 h-4" />
-                </button>
+              <div key={proj.id} className={`border ${editingProjId === proj.id ? 'border-amber-400 bg-amber-50' : 'border-slate-200'} rounded-lg p-3 relative group text-sm transition-colors`}>
+                <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={() => startEditProject(proj)} className="text-slate-400 hover:text-amber-600">
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => removeProject(proj.id)} className="text-slate-400 hover:text-red-500">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
                 <div className="font-semibold text-slate-800">{proj.title}</div>
                 <div className="text-slate-600 mt-1 whitespace-pre-wrap">{proj.description}</div>
                 {proj.skills && proj.skills.length > 0 && (

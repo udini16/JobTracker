@@ -24,6 +24,7 @@ This document outlines all the features and tasks that have been successfully im
   - **Master Skills:** A comprehensive list of technical tools and languages.
   - **Project Portfolio:** A list of past projects, including their specific tech stacks.
   - **Certifications:** Free-text licenses and achievements.
+- **Inline Editing:** Ability to click an edit button on existing Education, Experience, and Project items to modify them directly in the UI.
 - **Auto-Parse AI Modal:** Added a dedicated "Auto-Parse Resume" modal that takes a raw resume block and intelligently distributes the data into the 6 highly structured boxes.
 - **Local Persistence:** Data is reliably saved across sessions using browser `localStorage`.
 
