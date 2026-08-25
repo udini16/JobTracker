@@ -13,6 +13,21 @@ export default function SavedJobs({ savedJobs, setSavedJobs }) {
     setSavedJobs(prev => prev.filter(job => job.id !== id));
   };
 
+  const updateEmail = (jobId, field, value) => {
+    setSavedJobs(prev => prev.map(job => {
+      if (job.id === jobId && job.generatedEmail) {
+        return {
+          ...job,
+          generatedEmail: {
+            ...job.generatedEmail,
+            [field]: value
+          }
+        };
+      }
+      return job;
+    }));
+  };
+
   const downloadPDF = async (content, filename) => {
     const htmlContent = marked.parse(content);
     const fullHtml = `
@@ -140,10 +155,20 @@ export default function SavedJobs({ savedJobs, setSavedJobs }) {
             </div>
 
             {job.generatedEmail && expandedEmails[job.id] && (
-              <div className="mt-4 mb-4 bg-slate-100 rounded-lg p-4 text-sm font-mono text-slate-800 whitespace-pre-wrap border border-slate-200">
-                <span className="font-bold">Subject:</span> {job.generatedEmail.subject}
-                <hr className="my-2 border-slate-300" />
-                {job.generatedEmail.body}
+              <div className="mt-4 mb-4 bg-slate-100 rounded-lg p-4 text-sm font-mono border border-slate-200 flex flex-col gap-2">
+                <div className="flex items-center gap-2 border-b border-slate-300 pb-2">
+                  <span className="font-bold text-slate-700">Subject:</span>
+                  <input 
+                    className="flex-1 bg-transparent focus:outline-none text-slate-800" 
+                    value={job.generatedEmail.subject} 
+                    onChange={(e) => updateEmail(job.id, 'subject', e.target.value)}
+                  />
+                </div>
+                <textarea 
+                  className="w-full h-48 bg-transparent focus:outline-none resize-y text-slate-800" 
+                  value={job.generatedEmail.body} 
+                  onChange={(e) => updateEmail(job.id, 'body', e.target.value)}
+                />
               </div>
             )}
 

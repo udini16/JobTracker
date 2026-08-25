@@ -147,17 +147,59 @@ app.post('/api/send', async (req, res) => {
     const { jobId } = req.body;
     let job = jobsStore.find(j => j.id === jobId);
     if (!job && req.body.job) {
-        job = req.body.job;
+async function generatePdfBuffer(html) {
+    const puppeteer = require('puppeteer');
+    const browser = await puppeteer.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    const pdfBuffer = await page.pdf({ format: 'A4', margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' } });
+    await browser.close();
+    return pdfBuffer;
+}
+
+app.post('/api/send', upload.single('customFile'), async (req, res) => {
+    let jobId, clientJob, cvHtml, clHtml;
+    try {
+        jobId = req.body.jobId;
+        clientJob = req.body.job ? JSON.parse(req.body.job) : null;
+        cvHtml = req.body.cvHtml;
+        clHtml = req.body.clHtml;
+    } catch (e) {
+        return res.status(400).json({ success: false, error: 'Invalid JSON payload' });
+    }
+
+    let job = jobsStore.find(j => j.id === jobId);
+    if (!job && clientJob) {
+        job = clientJob;
         jobsStore.push(job);
+    }
+    // Update the job with the latest edited email from client
+    if (job && clientJob && clientJob.generatedEmail) {
+        job.generatedEmail = clientJob.generatedEmail;
     }
     if (!job || !job.generatedEmail) return res.status(400).json({ success: false, error: 'Job or email not found' });
 
     try {
-        await sendReachoutEmail(job.hrEmail, job.generatedEmail.subject, job.generatedEmail.body, job.id);
+        const attachments = [];
+        
+        if (cvHtml) {
+            const cvBuffer = await generatePdfBuffer(cvHtml);
+            attachments.push({ filename: `${job.company.replace(/\s+/g, '_')}_CV.pdf`, content: cvBuffer });
+        }
+        if (clHtml) {
+            const clBuffer = await generatePdfBuffer(clHtml);
+            attachments.push({ filename: `${job.company.replace(/\s+/g, '_')}_CoverLetter.pdf`, content: clBuffer });
+        }
+        if (req.file) {
+            attachments.push({ filename: req.file.originalname, content: req.file.buffer });
+        }
+
+        await sendReachoutEmail(job.hrEmail, job.generatedEmail.subject, job.generatedEmail.body, job.id, attachments);
         job.status = 'Sent';
         await sendNotification(`🚀 Email sent to ${job.company} for the ${job.title} role!`);
         res.json({ success: true, job });
     } catch (error) {
+        console.error('Send error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -184,13 +226,7 @@ app.post('/api/generate-pdf', async (req, res) => {
     if (!html) return res.status(400).json({ error: 'HTML content required' });
 
     try {
-        const puppeteer = require('puppeteer');
-        const browser = await puppeteer.launch({ headless: true });
-        const page = await browser.newPage();
-        await page.setContent(html, { waitUntil: 'networkidle0' });
-        const pdfBuffer = await page.pdf({ format: 'A4', margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' } });
-        await browser.close();
-
+        const pdfBuffer = await generatePdfBuffer(html);
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', 'attachment; filename=document.pdf');
         res.send(pdfBuffer);

@@ -9,6 +9,7 @@ export default function OutreachDashboard({ jobs, setJobs, profileData, setSaved
   const [sendingFor, setSendingFor] = useState(null);
   const [activeModalJob, setActiveModalJob] = useState(null);
   const [error, setError] = useState('');
+  const [attachments, setAttachments] = useState({});
   
   const [showPreGenFor, setShowPreGenFor] = useState(null);
   const [selectedProjIds, setSelectedProjIds] = useState([]);
@@ -147,12 +148,71 @@ export default function OutreachDashboard({ jobs, setJobs, profileData, setSaved
     setNewManualSkill('');
   };
 
+  const updateEmail = (jobId, field, value) => {
+    setJobs(prev => prev.map(job => {
+      if (job.id === jobId && job.generatedEmail) {
+        return {
+          ...job,
+          generatedEmail: {
+            ...job.generatedEmail,
+            [field]: value
+          }
+        };
+      }
+      return job;
+    }));
+  };
+
+  const buildPdfHtml = (content) => {
+    if (!content) return '';
+    const htmlContent = marked.parse(content);
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; color: #333; line-height: 1.6; padding: 20px; }
+          h1, h2, h3 { color: #111; margin-bottom: 10px; margin-top: 20px; }
+          p { margin-bottom: 15px; }
+          ul, ol { margin-bottom: 15px; padding-left: 20px; }
+          li { margin-bottom: 5px; }
+          strong { font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        ${htmlContent}
+      </body>
+      </html>
+    `;
+  };
+
   const sendEmail = async (jobId) => {
     setError('');
     setSendingFor(jobId);
     
     try {
-      const response = await axios.post('http://localhost:3000/api/send', { jobId, job: jobs.find(j => j.id === jobId) });
+      const job = jobs.find(j => j.id === jobId);
+      const jobAttachments = attachments[jobId] || {};
+      
+      const formData = new FormData();
+      formData.append('jobId', jobId);
+      formData.append('job', JSON.stringify(job));
+      
+      if (jobAttachments.attachCV && job.generatedResume) {
+        formData.append('cvHtml', buildPdfHtml(job.generatedResume));
+      }
+      if (jobAttachments.attachCL && job.generatedCoverLetter) {
+        formData.append('clHtml', buildPdfHtml(job.generatedCoverLetter));
+      }
+      if (jobAttachments.customFile) {
+        formData.append('customFile', jobAttachments.customFile);
+      }
+
+      const response = await axios.post('http://localhost:3000/api/send', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
       if (response.data.success) {
         setJobs(prev => prev.map(j => j.id === jobId ? response.data.job : j));
       } else {
@@ -220,10 +280,20 @@ export default function OutreachDashboard({ jobs, setJobs, profileData, setSaved
             </div>
 
             {job.generatedEmail ? (
-              <div className="mt-4 bg-slate-100 rounded-lg p-4 text-sm font-mono text-slate-800 whitespace-pre-wrap border border-slate-200">
-                <span className="font-bold">Subject:</span> {job.generatedEmail.subject}
-                <hr className="my-2 border-slate-300" />
-                {job.generatedEmail.body}
+              <div className="mt-4 bg-slate-100 rounded-lg p-4 text-sm font-mono border border-slate-200 flex flex-col gap-2">
+                <div className="flex items-center gap-2 border-b border-slate-300 pb-2">
+                  <span className="font-bold text-slate-700">Subject:</span>
+                  <input 
+                    className="flex-1 bg-transparent focus:outline-none text-slate-800" 
+                    value={job.generatedEmail.subject} 
+                    onChange={(e) => updateEmail(job.id, 'subject', e.target.value)}
+                  />
+                </div>
+                <textarea 
+                  className="w-full h-48 bg-transparent focus:outline-none resize-y text-slate-800" 
+                  value={job.generatedEmail.body} 
+                  onChange={(e) => updateEmail(job.id, 'body', e.target.value)}
+                />
               </div>
             ) : (
               <p className="text-sm text-slate-500 mt-2 line-clamp-2">{job.description}</p>
@@ -261,14 +331,37 @@ export default function OutreachDashboard({ jobs, setJobs, profileData, setSaved
               )}
               
               {job.generatedEmail && job.status !== 'Sent' && job.status !== 'Opened' && (
-                <button
-                  onClick={() => sendEmail(job.id)}
-                  disabled={sendingFor === job.id}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-                >
-                  {sendingFor === job.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  Send Email via Resend
-                </button>
+                <div className="flex flex-col gap-3 w-full mt-2 border-t border-slate-100 pt-4">
+                  <h4 className="text-sm font-semibold text-slate-700">Attachments</h4>
+                  <div className="flex flex-wrap items-center gap-4">
+                    {job.generatedResume && (
+                      <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+                        <input type="checkbox" checked={attachments[job.id]?.attachCV || false} onChange={(e) => setAttachments(prev => ({ ...prev, [job.id]: { ...prev[job.id], attachCV: e.target.checked } }))} />
+                        Attach Tailored CV
+                      </label>
+                    )}
+                    {job.generatedCoverLetter && (
+                      <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+                        <input type="checkbox" checked={attachments[job.id]?.attachCL || false} onChange={(e) => setAttachments(prev => ({ ...prev, [job.id]: { ...prev[job.id], attachCL: e.target.checked } }))} />
+                        Attach Tailored Cover Letter
+                      </label>
+                    )}
+                    <div className="flex items-center gap-2 border-l border-slate-200 pl-4">
+                      <span className="text-sm text-slate-600">Custom PDF:</span>
+                      <input type="file" accept=".pdf" className="text-sm text-slate-600 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200" onChange={(e) => setAttachments(prev => ({ ...prev, [job.id]: { ...prev[job.id], customFile: e.target.files[0] } }))} />
+                    </div>
+                  </div>
+                  <div className="mt-2 flex">
+                    <button
+                      onClick={() => sendEmail(job.id)}
+                      disabled={sendingFor === job.id}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                    >
+                      {sendingFor === job.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                      Send Email via Resend
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           </div>

@@ -3,7 +3,7 @@ const { Resend } = require('resend');
 const resend = new Resend(process.env.RESEND_API_KEY || 're_mock_key');
 const fromEmail = process.env.FROM_EMAIL || 'onboarding@resend.dev';
 
-async function sendReachoutEmail(toEmail, subject, body, jobId) {
+async function sendReachoutEmail(toEmail, subject, body, jobId, attachments = []) {
     try {
         const trackingPixelUrl = `${process.env.BACKEND_URL || 'http://localhost:3000'}/api/track/${jobId}`;
         const htmlBody = `<p>${body.replace(/\n/g, '<br/>')}</p><img src="${trackingPixelUrl}" width="1" height="1" alt="" />`;
@@ -15,6 +15,7 @@ async function sendReachoutEmail(toEmail, subject, body, jobId) {
                 subject: subject,
                 text: body,
                 html: htmlBody,
+                attachments: attachments.length > 0 ? attachments : undefined
             });
 
             if (error) {
