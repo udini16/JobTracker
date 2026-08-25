@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Bookmark, Building2, MapPin, ExternalLink, Trash2, Mail, FileText, Eye, X } from 'lucide-react';
+import { Bookmark, Building2, MapPin, ExternalLink, Trash2, Mail, FileText, Eye, X, Loader2, Bot } from 'lucide-react';
 import { marked } from 'marked';
 import axios from 'axios';
 
 export default function SavedJobs({ savedJobs, setSavedJobs }) {
   const [activeModalJob, setActiveModalJob] = useState(null);
+  const [generatingFor, setGeneratingFor] = useState(null);
+  const [error, setError] = useState('');
 
   const removeSavedJob = (id) => {
     setSavedJobs(prev => prev.filter(job => job.id !== id));
@@ -46,6 +48,27 @@ export default function SavedJobs({ savedJobs, setSavedJobs }) {
     }
   };
 
+  const generateEmail = async (jobId) => {
+    setGeneratingFor(jobId);
+    setError('');
+    try {
+      const response = await axios.post('http://localhost:3000/api/generate-email', {
+        jobId,
+        profileData: JSON.parse(localStorage.getItem('hermes_base_profile_data') || '{}')
+      });
+
+      if (response.data.success) {
+        setSavedJobs(prev => prev.map(j => j.id === jobId ? response.data.job : j));
+      } else {
+        setError(response.data.error || 'Failed to generate email');
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setGeneratingFor(null);
+    }
+  };
+
   if (savedJobs.length === 0) {
     return (
       <div className="bg-white p-12 rounded-xl shadow-sm border border-slate-200 text-center">
@@ -67,7 +90,13 @@ export default function SavedJobs({ savedJobs, setSavedJobs }) {
           {savedJobs.length} Saved
         </span>
       </div>
-      
+
+      {error && (
+        <div className="px-6 py-3 bg-red-50 text-red-600 text-sm border-b border-red-100">
+          {error}
+        </div>
+      )}
+
       <div className="divide-y divide-slate-100">
         {savedJobs.map(job => (
           <div key={job.id} className="p-6 hover:bg-slate-50 transition-colors">
@@ -94,7 +123,7 @@ export default function SavedJobs({ savedJobs, setSavedJobs }) {
                     <ExternalLink className="w-4 h-4" />
                   </a>
                 )}
-                <button 
+                <button
                   onClick={() => removeSavedJob(job.id)}
                   className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                   title="Remove from saved"
@@ -108,8 +137,19 @@ export default function SavedJobs({ savedJobs, setSavedJobs }) {
               {job.description}
             </div>
 
-            {(job.generatedEmail || job.generatedResume || job.generatedCoverLetter) && (
-              <div className="mt-4 pt-4 border-t border-slate-100 flex flex-wrap items-center gap-4">
+            <div className="mt-4 pt-4 border-t border-slate-100 flex flex-wrap items-center gap-4">
+              {!job.generatedEmail && (
+                <button
+                  onClick={() => generateEmail(job.id)}
+                  disabled={generatingFor === job.id}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+                >
+                  {generatingFor === job.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Bot className="w-3 h-3" />}
+                  Generate Hermes Email
+                </button>
+              )}
+
+              {(job.generatedEmail || job.generatedResume || job.generatedCoverLetter) && (
                 <button
                   onClick={() => setActiveModalJob(job)}
                   className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-xs font-medium transition-colors mr-2"
@@ -117,26 +157,26 @@ export default function SavedJobs({ savedJobs, setSavedJobs }) {
                   <Eye className="w-3 h-3" />
                   View / Edit Docs
                 </button>
-                {job.generatedEmail && (
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1"><Mail className="w-3 h-3"/> Email</span>
-                    <button onClick={() => downloadPDF(job.generatedEmail.body, `${job.company.replace(/\\s+/g, '_')}_Email.pdf`)} className="text-xs text-indigo-600 hover:underline">Download PDF</button>
-                  </div>
-                )}
-                {job.generatedResume && (
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1"><FileText className="w-3 h-3"/> CV</span>
-                    <button onClick={() => downloadPDF(job.generatedResume, `${job.company.replace(/\\s+/g, '_')}_CV.pdf`)} className="text-xs text-indigo-600 hover:underline">Download PDF</button>
-                  </div>
-                )}
-                {job.generatedCoverLetter && (
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1"><FileText className="w-3 h-3"/> Cover Letter</span>
-                    <button onClick={() => downloadPDF(job.generatedCoverLetter, `${job.company.replace(/\\s+/g, '_')}_CoverLetter.pdf`)} className="text-xs text-indigo-600 hover:underline">Download PDF</button>
-                  </div>
-                )}
-              </div>
-            )}
+              )}
+              {job.generatedEmail && (
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1"><Mail className="w-3 h-3" /> Email</span>
+                  <button onClick={() => downloadPDF(job.generatedEmail.body, `${job.company.replace(/\\s+/g, '_')}_Email.pdf`)} className="text-xs text-indigo-600 hover:underline">Download PDF</button>
+                </div>
+              )}
+              {job.generatedResume && (
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1"><FileText className="w-3 h-3" /> CV</span>
+                  <button onClick={() => downloadPDF(job.generatedResume, `${job.company.replace(/\\s+/g, '_')}_CV.pdf`)} className="text-xs text-indigo-600 hover:underline">Download PDF</button>
+                </div>
+              )}
+              {job.generatedCoverLetter && (
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1"><FileText className="w-3 h-3" /> Cover Letter</span>
+                  <button onClick={() => downloadPDF(job.generatedCoverLetter, `${job.company.replace(/\\s+/g, '_')}_CoverLetter.pdf`)} className="text-xs text-indigo-600 hover:underline">Download PDF</button>
+                </div>
+              )}
+            </div>
           </div>
         ))}
       </div>
@@ -153,10 +193,10 @@ export default function SavedJobs({ savedJobs, setSavedJobs }) {
             <div className="p-6 overflow-y-auto flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div className="flex justify-between items-center border-b pb-2">
-                  <h4 className="font-semibold text-slate-700 flex items-center gap-2"><FileText className="w-4 h-4"/> Tailored CV</h4>
+                  <h4 className="font-semibold text-slate-700 flex items-center gap-2"><FileText className="w-4 h-4" /> Tailored CV</h4>
                   <button onClick={() => downloadPDF(activeModalJob.generatedResume, `${activeModalJob.company.replace(/\\s+/g, '_')}_CV.pdf`)} className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1">Download .pdf</button>
                 </div>
-                <textarea 
+                <textarea
                   className="w-full h-[500px] p-4 text-sm font-mono text-slate-800 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
                   value={activeModalJob.generatedResume}
                   onChange={(e) => setActiveModalJob(prev => ({ ...prev, generatedResume: e.target.value }))}
@@ -164,10 +204,10 @@ export default function SavedJobs({ savedJobs, setSavedJobs }) {
               </div>
               <div className="space-y-4">
                 <div className="flex justify-between items-center border-b pb-2">
-                  <h4 className="font-semibold text-slate-700 flex items-center gap-2"><Mail className="w-4 h-4"/> Cover Letter</h4>
+                  <h4 className="font-semibold text-slate-700 flex items-center gap-2"><Mail className="w-4 h-4" /> Cover Letter</h4>
                   <button onClick={() => downloadPDF(activeModalJob.generatedCoverLetter, `${activeModalJob.company.replace(/\\s+/g, '_')}_CoverLetter.pdf`)} className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1">Download .pdf</button>
                 </div>
-                <textarea 
+                <textarea
                   className="w-full h-[500px] p-4 text-sm font-mono text-slate-800 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
                   value={activeModalJob.generatedCoverLetter}
                   onChange={(e) => setActiveModalJob(prev => ({ ...prev, generatedCoverLetter: e.target.value }))}
@@ -178,11 +218,11 @@ export default function SavedJobs({ savedJobs, setSavedJobs }) {
               <button onClick={() => setActiveModalJob(null)} className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg font-medium hover:bg-slate-300 transition-colors">
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={() => {
                   setSavedJobs(prev => prev.map(j => j.id === activeModalJob.id ? activeModalJob : j));
                   setActiveModalJob(null);
-                }} 
+                }}
                 className="px-4 py-2 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors"
               >
                 Save Changes
