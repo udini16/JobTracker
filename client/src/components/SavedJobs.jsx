@@ -52,9 +52,10 @@ export default function SavedJobs({ savedJobs, setSavedJobs }) {
     setGeneratingFor(jobId);
     setError('');
     try {
-      const response = await axios.post('http://localhost:3000/api/generate-email', {
+      const response = await axios.post('http://localhost:3000/api/generate', {
         jobId,
-        profileData: JSON.parse(localStorage.getItem('hermes_base_profile_data') || '{}')
+        job: savedJobs.find(j => j.id === jobId),
+        resumeText: localStorage.getItem('hermes_base_profile_data') || '{}'
       });
 
       if (response.data.success) {

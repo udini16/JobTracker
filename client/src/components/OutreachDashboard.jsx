@@ -60,7 +60,7 @@ export default function OutreachDashboard({ jobs, setJobs, profileData, setSaved
     setGeneratingFor(jobId);
     
     try {
-      const response = await axios.post('http://localhost:3000/api/generate', { jobId, resumeText: JSON.stringify(profileData) });
+      const response = await axios.post('http://localhost:3000/api/generate', { jobId, job: jobs.find(j => j.id === jobId), resumeText: JSON.stringify(profileData) });
       if (response.data.success) {
         setJobs(prev => prev.map(j => j.id === jobId ? response.data.job : j));
         
@@ -107,7 +107,8 @@ export default function OutreachDashboard({ jobs, setJobs, profileData, setSaved
 
     try {
       const response = await axios.post('http://localhost:3000/api/generate-application', { 
-        jobId, 
+        jobId,
+        job: jobs.find(j => j.id === jobId),
         profileData: {
           ...profileData,
           projects: selectedProjects,
@@ -151,7 +152,7 @@ export default function OutreachDashboard({ jobs, setJobs, profileData, setSaved
     setSendingFor(jobId);
     
     try {
-      const response = await axios.post('http://localhost:3000/api/send', { jobId });
+      const response = await axios.post('http://localhost:3000/api/send', { jobId, job: jobs.find(j => j.id === jobId) });
       if (response.data.success) {
         setJobs(prev => prev.map(j => j.id === jobId ? response.data.job : j));
       } else {

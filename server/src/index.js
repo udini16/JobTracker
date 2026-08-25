@@ -43,7 +43,14 @@ app.post('/api/generate', upload.single('resume'), async (req, res) => {
         return res.status(400).json({ success: false, error: 'Resume text is required' });
     }
 
-    const job = jobsStore.find(j => j.id === jobId);
+    let job = jobsStore.find(j => j.id === jobId);
+    
+    // Sync from client if server restarted and memory is lost
+    if (!job && req.body.job) {
+        job = req.body.job;
+        jobsStore.push(job);
+    }
+
     if (!job) return res.status(404).json({ success: false, error: 'Job not found' });
 
     try {
@@ -61,7 +68,11 @@ app.post('/api/generate-application', async (req, res) => {
     if (!profileData || (!profileData.biodata && !profileData.experience)) {
         return res.status(400).json({ success: false, error: 'Base profile details are required' });
     }
-    const job = jobsStore.find(j => j.id === jobId);
+    let job = jobsStore.find(j => j.id === jobId);
+    if (!job && req.body.job) {
+        job = req.body.job;
+        jobsStore.push(job);
+    }
     if (!job) return res.status(404).json({ success: false, error: 'Job not found' });
 
     try {
@@ -134,7 +145,11 @@ app.post('/api/parse-custom-job', async (req, res) => {
 
 app.post('/api/send', async (req, res) => {
     const { jobId } = req.body;
-    const job = jobsStore.find(j => j.id === jobId);
+    let job = jobsStore.find(j => j.id === jobId);
+    if (!job && req.body.job) {
+        job = req.body.job;
+        jobsStore.push(job);
+    }
     if (!job || !job.generatedEmail) return res.status(400).json({ success: false, error: 'Job or email not found' });
 
     try {
