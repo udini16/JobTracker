@@ -127,21 +127,6 @@ export default function SavedJobs({ savedJobs, setSavedJobs }) {
     }
   };
 
-    try {
-      const response = await axios.post('http://localhost:3000/api/generate-pdf', { html: fullHtml }, { responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', filename);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (err) {
-      console.error('PDF download failed', err);
-      alert('Failed to generate PDF');
-    }
-  };
-
   const generateEmail = async (jobId) => {
     setGeneratingFor(jobId);
     setError('');
