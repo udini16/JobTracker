@@ -6,6 +6,7 @@ import axios from 'axios';
 export default function SavedJobs({ savedJobs, setSavedJobs }) {
   const [activeModalJob, setActiveModalJob] = useState(null);
   const [generatingFor, setGeneratingFor] = useState(null);
+  const [tailoringFor, setTailoringFor] = useState(null);
   const [error, setError] = useState('');
   const [expandedEmails, setExpandedEmails] = useState({});
   const [attachments, setAttachments] = useState({});
@@ -149,6 +150,36 @@ export default function SavedJobs({ savedJobs, setSavedJobs }) {
     }
   };
 
+  const generateDocs = async (jobId) => {
+    setTailoringFor(jobId);
+    setError('');
+    
+    try {
+      const profileData = JSON.parse(localStorage.getItem('hermes_base_profile_data') || '{}');
+      if (!profileData || Object.keys(profileData).length === 0) {
+        setError('Please provide your Profile details first in the Base Profile tab.');
+        setTailoringFor(null);
+        return;
+      }
+      
+      const response = await axios.post('http://localhost:3000/api/generate-application', { 
+        jobId,
+        job: savedJobs.find(j => j.id === jobId),
+        profileData
+      });
+      if (response.data.success) {
+        setSavedJobs(prev => prev.map(j => j.id === jobId ? response.data.job : j));
+        setActiveModalJob(response.data.job);
+      } else {
+        setError(response.data.error || 'Failed to generate documents');
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setTailoringFor(null);
+    }
+  };
+
   if (savedJobs.length === 0) {
     return (
       <div className="bg-white p-12 rounded-xl shadow-sm border border-slate-200 text-center">
@@ -271,6 +302,17 @@ export default function SavedJobs({ savedJobs, setSavedJobs }) {
                   >
                     {generatingFor === job.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Bot className="w-3 h-3" />}
                     Generate Hermes Email
+                  </button>
+                )}
+                
+                {(!job.generatedResume || !job.generatedCoverLetter) && (
+                  <button
+                    onClick={() => generateDocs(job.id)}
+                    disabled={tailoringFor === job.id}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+                  >
+                    {tailoringFor === job.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileText className="w-3 h-3" />}
+                    Tailor CV
                   </button>
                 )}
 
