@@ -35,6 +35,7 @@ When you paste your resume and click "Generate Email" or "Tailor Resume & CV" on
 ### 3. Custom Jobs & Saved Jobs Vault
 - **Parse from Links:** Found a job on a random site like Threads or Twitter? Just paste the URL into the "Add Custom Job" tool. The backend visits the link, extracts the text, and intelligently parses the job details right into your pipeline.
 - **Permanent Storage:** We added a persistent **Saved Jobs** tab. Whenever you parse a custom link or generate documents for *any* job, it is automatically backed up. Even if you restart the server, you won't lose your generated emails and PDFs!
+- **Saved Jobs Management:** You can manually add new jobs or edit the details of your saved jobs using the edit pencil icon in the Saved Jobs tab. You can also generate your Hermes Email and Tailored CV directly from here without going through the main pipeline.
 
 ### 4. Email Tracking & Telegram Integration
 - **Resend API** is integrated to send the emails securely to HR or recruiters.
@@ -67,16 +68,16 @@ TELEGRAM_BOT_TOKEN=your_bot_token_from_botfather
 TELEGRAM_CHAT_ID=your_chat_id
 ```
 
-### Starting the Backend
-```bash
-cd server
-npm start # (or run `node src/index.js`)
-```
+### Running the App (Unified Start)
 
-### Starting the Frontend
+Thanks to `concurrently` set up in the root directory, you no longer need multiple terminals! From the **root** of the project, simply run:
+
 ```bash
-cd client
+npm install
+npm run install:all # Installs dependencies for root, server, and client
 npm run dev
 ```
 
-Enjoy your automated job application tracker! Let me know if you need any adjustments to the scraper logic or AI prompts.
+This will automatically boot up both the Express backend on port 3000 and the Vite React frontend on port 5173.
+
+Happy hunting! 🏹

@@ -6,6 +6,7 @@ This document outlines all the features and tasks that have been successfully im
 
 ### Core Architecture & Branding
 - **Full-Stack Setup:** Established a React (Vite) frontend with Tailwind CSS and an Express/Node.js backend.
+- **Unified Startup:** Configured `concurrently` in a root `package.json` to allow starting both the backend and frontend simultaneously with a single `npm run dev` command.
 - **Rebranding:** Successfully transitioned the project name from "JobTracker" to "JobPortal".
 - **Visual Identity:** Added the custom Hermes logo and updated the application's favicon and title.
 - **Version Control:** Enforced Conventional Commits methodology (`feat:`, `fix:`, etc.) for clean GitHub history.
@@ -40,6 +41,7 @@ This document outlines all the features and tasks that have been successfully im
 ### Custom Jobs & Persistent Storage
 - **Custom Job Parsing:** Built an intelligent endpoint that accepts arbitrary URLs (e.g., Threads, Twitter, Company Sites) or raw text. It navigates to the URL using Puppeteer, extracts the text, and uses the LLM to parse the Job Title, Company, Location, and Description.
 - **Saved Jobs Vault:** Added a persistent "Saved Jobs" tab. Any job manually added via link, or any scraped job that has documents generated for it, is automatically backed up to browser `localStorage` ensuring no work is lost on restart.
+- **Saved Jobs Management:** Users can now manually add new jobs, edit existing saved job details, and generate Hermes Emails and Tailored CVs directly from the Saved Jobs dashboard without needing to run them through the main pipeline first.
 
 ### Email Delivery & Tracking
 - **Email Delivery:** Integrated Resend API for sending actual emails directly to hiring managers.
