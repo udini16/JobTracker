@@ -491,6 +491,18 @@ export default function SavedJobs({ savedJobs, setSavedJobs }) {
                   />
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Target HR Email</label>
+                  <input 
+                    type="email" 
+                    value={editingJob.hrEmail || ''} 
+                    onChange={e => setEditingJob({...editingJob, hrEmail: e.target.value})}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="e.g. careers@acme.com"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Location</label>
                   <input 
                     type="text" 
@@ -500,16 +512,16 @@ export default function SavedJobs({ savedJobs, setSavedJobs }) {
                     placeholder="e.g. Remote, San Francisco"
                   />
                 </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Job URL</label>
-                <input 
-                  type="text" 
-                  value={editingJob.url || ''} 
-                  onChange={e => setEditingJob({...editingJob, url: e.target.value})}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="https://..."
-                />
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Job URL</label>
+                  <input 
+                    type="text" 
+                    value={editingJob.url || ''} 
+                    onChange={e => setEditingJob({...editingJob, url: e.target.value})}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="https://..."
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Full Job Description</label>

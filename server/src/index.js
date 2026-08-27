@@ -170,13 +170,22 @@ app.post('/api/send', upload.single('customFile'), async (req, res) => {
         job = clientJob;
         jobsStore.push(job);
     }
-    // Update the job with the latest edited email from client
-    if (job && clientJob && clientJob.generatedEmail) {
-        job.generatedEmail = clientJob.generatedEmail;
+    
+    // Update the job with the latest edited details from client (email, hrEmail, etc.)
+    if (job && clientJob) {
+        if (clientJob.generatedEmail) job.generatedEmail = clientJob.generatedEmail;
+        if (clientJob.hrEmail) job.hrEmail = clientJob.hrEmail;
+        if (clientJob.title) job.title = clientJob.title;
+        if (clientJob.company) job.company = clientJob.company;
     }
+
     if (!job || !job.generatedEmail) return res.status(400).json({ success: false, error: 'Job or email not found' });
 
     try {
+        if (!job.hrEmail) {
+            return res.status(400).json({ success: false, error: 'Target HR Email is missing. Please edit the job details to add the company email address before sending.' });
+        }
+
         const attachments = [];
         
         if (cvHtml) {
