@@ -44,7 +44,7 @@ This document outlines all the features and tasks that have been successfully im
 - **Saved Jobs Management:** Users can now manually add new jobs, edit existing saved job details, and generate Hermes Emails and Tailored CVs directly from the Saved Jobs dashboard without needing to run them through the main pipeline first.
 
 ### Email Delivery & Tracking
-- **Email Delivery:** Integrated Resend API for sending actual emails directly to hiring managers.
+- **Email Delivery:** Integrated Nodemailer to send actual emails directly to hiring managers using your personal Gmail account (via App Passwords).
 - **Open Tracking:** Implemented a transparent 1x1 tracking pixel to detect when a hiring manager opens the email.
 - **Telegram Notifications:** Set up instant push notifications to your phone when an email is sent or opened.
 

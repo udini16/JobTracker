@@ -38,7 +38,7 @@ When you paste your resume and click "Generate Email" or "Tailor Resume & CV" on
 - **Saved Jobs Management:** You can manually add new jobs or edit the details of your saved jobs using the edit pencil icon in the Saved Jobs tab. You can also generate your Hermes Email and Tailored CV directly from here without going through the main pipeline.
 
 ### 4. Email Tracking & Telegram Integration
-- **Resend API** is integrated to send the emails securely to HR or recruiters.
+- **Nodemailer (Gmail):** Integrated Nodemailer to send emails securely directly from your personal Gmail account via an App Password.
 - **Pixel Tracking:** An invisible 1x1 pixel is injected into the HTML of every email sent.
 - **Telegram Bot:** When the recruiter opens the email, the tracking pixel triggers an endpoint on your Node server, which immediately fires off a message to your **Telegram Bot** alerting you that the email was opened!
 
@@ -59,11 +59,11 @@ OPENAI_API_KEY=your_api_key_here
 OPENAI_BASE_URL=https://api.openai.com/v1 # Change to OpenRouter/TogetherAI if using open-source Hermes
 LLM_MODEL=gpt-4o-mini # Change to hermes model string if using OpenRouter
 
-# Email (Resend)
-RESEND_API_KEY=your_resend_api_key
-FROM_EMAIL=your_verified_email@domain.com
+# Email Delivery (Nodemailer via Gmail)
+GMAIL_USER=your_email@gmail.com
+GMAIL_APP_PASSWORD=your_16_char_app_password
 
-# Telegram Bot
+# Telegram Bot Config
 TELEGRAM_BOT_TOKEN=your_bot_token_from_botfather
 TELEGRAM_CHAT_ID=your_chat_id
 ```

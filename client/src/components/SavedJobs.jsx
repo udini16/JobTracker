@@ -399,7 +399,7 @@ export default function SavedJobs({ savedJobs, setSavedJobs }) {
                     className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ml-2"
                   >
                     {sendingFor === job.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                    Send Email via Resend
+                    Send Email via Gmail
                   </button>
                 )}
               </div>
