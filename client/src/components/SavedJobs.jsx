@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bookmark, Building2, MapPin, ExternalLink, Trash2, Mail, FileText, Eye, X, Loader2, Bot, Send } from 'lucide-react';
+import { Bookmark, Building2, MapPin, ExternalLink, Trash2, Mail, FileText, Eye, X, Loader2, Bot, Send, Pencil, Plus } from 'lucide-react';
 import { marked } from 'marked';
 import axios from 'axios';
 
@@ -11,6 +11,8 @@ export default function SavedJobs({ savedJobs, setSavedJobs }) {
   const [expandedEmails, setExpandedEmails] = useState({});
   const [attachments, setAttachments] = useState({});
   const [sendingFor, setSendingFor] = useState(null);
+  const [editingJob, setEditingJob] = useState(null);
+
   const removeSavedJob = (id) => {
     setSavedJobs(prev => prev.filter(job => job.id !== id));
   };
@@ -180,12 +182,42 @@ export default function SavedJobs({ savedJobs, setSavedJobs }) {
     }
   };
 
-  if (savedJobs.length === 0) {
+  const handleSaveJobDetails = () => {
+    if (!editingJob.title || !editingJob.company) {
+      alert("Title and Company are required.");
+      return;
+    }
+    
+    setSavedJobs(prev => {
+      // If it's an existing job (has an ID that matches)
+      const exists = prev.find(j => j.id === editingJob.id);
+      if (exists) {
+        return prev.map(j => j.id === editingJob.id ? editingJob : j);
+      }
+      // Otherwise it's a new job being manually added
+      return [{
+        ...editingJob,
+        id: editingJob.id || `manual-${Date.now()}`,
+        status: editingJob.status || 'Saved manually',
+        source: editingJob.source || 'Manual Entry',
+      }, ...prev];
+    });
+    setEditingJob(null);
+  };
+
+  if (savedJobs.length === 0 && !editingJob) {
     return (
       <div className="bg-white p-12 rounded-xl shadow-sm border border-slate-200 text-center">
         <Bookmark className="w-12 h-12 text-slate-300 mx-auto mb-4" />
         <h3 className="text-lg font-medium text-slate-900 mb-2">No saved jobs yet</h3>
-        <p className="text-slate-500">Jobs parsed from custom links or tailored for applications will appear here permanently.</p>
+        <p className="text-slate-500 mb-6">Jobs parsed from custom links or tailored for applications will appear here permanently.</p>
+        <button
+          onClick={() => setEditingJob({ title: '', company: '', location: '', url: '', description: '' })}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          Add Custom Job
+        </button>
       </div>
     );
   }
@@ -197,9 +229,18 @@ export default function SavedJobs({ savedJobs, setSavedJobs }) {
           <Bookmark className="w-5 h-5 text-indigo-600" />
           Saved Jobs Collection
         </h2>
-        <span className="bg-slate-100 text-slate-600 text-sm px-3 py-1 rounded-full font-medium">
-          {savedJobs.length} Saved
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="bg-slate-100 text-slate-600 text-sm px-3 py-1 rounded-full font-medium">
+            {savedJobs.length} Saved
+          </span>
+          <button
+            onClick={() => setEditingJob({ title: '', company: '', location: '', url: '', description: '' })}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg text-sm font-medium transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add Job
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -230,10 +271,17 @@ export default function SavedJobs({ savedJobs, setSavedJobs }) {
               </div>
               <div className="flex items-center gap-3">
                 {job.url && (
-                  <a href={job.url} target="_blank" rel="noopener noreferrer" className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                  <a href={job.url} target="_blank" rel="noopener noreferrer" className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="View Original Post">
                     <ExternalLink className="w-4 h-4" />
                   </a>
                 )}
+                <button
+                  onClick={() => setEditingJob(job)}
+                  className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                  title="Edit Job Details"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
                 <button
                   onClick={() => removeSavedJob(job.id)}
                   className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -405,6 +453,83 @@ export default function SavedJobs({ savedJobs, setSavedJobs }) {
                 className="px-4 py-2 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors"
               >
                 Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editingJob && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl">
+              <h3 className="text-lg font-bold text-slate-900">{editingJob.id ? 'Edit Job Details' : 'Add New Job'}</h3>
+              <button onClick={() => setEditingJob(null)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto flex-1 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Job Title *</label>
+                <input 
+                  type="text" 
+                  value={editingJob.title || ''} 
+                  onChange={e => setEditingJob({...editingJob, title: e.target.value})}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="e.g. Senior Frontend Engineer"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Company *</label>
+                  <input 
+                    type="text" 
+                    value={editingJob.company || ''} 
+                    onChange={e => setEditingJob({...editingJob, company: e.target.value})}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="e.g. Acme Corp"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Location</label>
+                  <input 
+                    type="text" 
+                    value={editingJob.location || ''} 
+                    onChange={e => setEditingJob({...editingJob, location: e.target.value})}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="e.g. Remote, San Francisco"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Job URL</label>
+                <input 
+                  type="text" 
+                  value={editingJob.url || ''} 
+                  onChange={e => setEditingJob({...editingJob, url: e.target.value})}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="https://..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Full Job Description</label>
+                <textarea 
+                  value={editingJob.description || ''} 
+                  onChange={e => setEditingJob({...editingJob, description: e.target.value})}
+                  className="w-full h-48 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-y"
+                  placeholder="Paste the full job description here..."
+                />
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 rounded-b-xl flex justify-end gap-3">
+              <button onClick={() => setEditingJob(null)} className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg font-medium hover:bg-slate-300 transition-colors">
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveJobDetails}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+              >
+                Save Job
               </button>
             </div>
           </div>
