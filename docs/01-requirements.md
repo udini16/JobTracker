@@ -11,4 +11,4 @@
 - Node.js environment
 - React + Vite for the frontend UI
 - Puppeteer for scraping
-- Third-party APIs: OpenAI (for LLM), Resend (for emails), Telegram Bot API.
+- Third-party APIs: OpenAI (for LLM), Nodemailer (for emails), Telegram Bot API.

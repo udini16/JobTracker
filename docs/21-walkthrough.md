@@ -34,8 +34,10 @@ When you paste your resume and click "Generate Email" or "Tailor Resume & CV" on
 
 ### 3. Custom Jobs & Saved Jobs Vault
 - **Parse from Links:** Found a job on a random site like Threads or Twitter? Just paste the URL into the "Add Custom Job" tool. The backend visits the link, extracts the text, and intelligently parses the job details right into your pipeline.
-- **Permanent Storage:** We added a persistent **Saved Jobs** tab. Whenever you parse a custom link or generate documents for *any* job, it is automatically backed up. Even if you restart the server, you won't lose your generated emails and PDFs!
+- **Job Pipeline:** Shows the list of scraped jobs (from JobSpy) or allows you to paste a custom URL/text snippet to parse a custom job using the LLM.
+- **Outreach Dashboard (within Pipeline):** For any job found, clicking "Craft Approach" will generate the custom Resume and Cover letter dynamically using the LLM. 
 - **Saved Jobs Management:** You can manually add new jobs or edit the details of your saved jobs using the edit pencil icon in the Saved Jobs tab. You can also generate your Hermes Email and Tailored CV directly from here without going through the main pipeline.
+- **Applied Jobs Tab:** Once an email has been sent for a saved job, it automatically moves out of Saved Jobs and into the dedicated Applied Jobs tab for easy pipeline management.
 
 ### 4. Email Tracking & Telegram Integration
 - **Nodemailer (Gmail):** Integrated Nodemailer to send emails securely directly from your personal Gmail account via an App Password.

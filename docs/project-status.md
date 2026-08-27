@@ -42,6 +42,7 @@ This document outlines all the features and tasks that have been successfully im
 - **Custom Job Parsing:** Built an intelligent endpoint that accepts arbitrary URLs (e.g., Threads, Twitter, Company Sites) or raw text. It navigates to the URL using Puppeteer, extracts the text, and uses the LLM to parse the Job Title, Company, Location, and Description.
 - **Saved Jobs Vault:** Added a persistent "Saved Jobs" tab. Any job manually added via link, or any scraped job that has documents generated for it, is automatically backed up to browser `localStorage` ensuring no work is lost on restart.
 - **Saved Jobs Management:** Users can now manually add new jobs, edit existing saved job details, and generate Hermes Emails and Tailored CVs directly from the Saved Jobs dashboard without needing to run them through the main pipeline first.
+- **Applied Jobs Tab:** A dedicated navigation tab to isolate and view jobs that have successfully had outreach emails sent out, separate from standard saved jobs.
 
 ### Email Delivery & Tracking
 - **Email Delivery:** Integrated Nodemailer to send actual emails directly to hiring managers using your personal Gmail account (via App Passwords).
