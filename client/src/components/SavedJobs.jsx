@@ -3,7 +3,7 @@ import { Bookmark, Building2, MapPin, ExternalLink, Trash2, Mail, FileText, Eye,
 import { marked } from 'marked';
 import axios from 'axios';
 
-export default function SavedJobs({ savedJobs, setSavedJobs }) {
+export default function SavedJobs({ savedJobs, setSavedJobs, viewMode = 'saved' }) {
   const [activeModalJob, setActiveModalJob] = useState(null);
   const [generatingFor, setGeneratingFor] = useState(null);
   const [tailoringFor, setTailoringFor] = useState(null);
@@ -205,53 +205,42 @@ export default function SavedJobs({ savedJobs, setSavedJobs }) {
     setEditingJob(null);
   };
 
-  if (savedJobs.length === 0 && !editingJob) {
+  
+  const unappliedJobs = savedJobs.filter(j => j.status !== 'Sent' && j.status !== 'Opened');
+  const appliedJobs = savedJobs.filter(j => j.status === 'Sent' || j.status === 'Opened');
+  const jobsToDisplay = viewMode === 'saved' ? unappliedJobs : appliedJobs;
+
+  if (jobsToDisplay.length === 0 && !editingJob) {
     return (
       <div className="bg-white p-12 rounded-xl shadow-sm border border-slate-200 text-center">
-        <Bookmark className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-slate-900 mb-2">No saved jobs yet</h3>
-        <p className="text-slate-500 mb-6">Jobs parsed from custom links or tailored for applications will appear here permanently.</p>
-        <button
-          onClick={() => setEditingJob({ title: '', company: '', location: '', url: '', description: '' })}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Add Custom Job
-        </button>
+        {viewMode === 'saved' ? (
+          <>
+            <Bookmark className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-slate-900 mb-2">No saved jobs yet</h3>
+            <p className="text-slate-500 mb-6">Jobs parsed from custom links or tailored for applications will appear here.</p>
+          </>
+        ) : (
+          <>
+            <Send className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-slate-900 mb-2">No applied jobs yet</h3>
+            <p className="text-slate-500 mb-6">Jobs you have successfully sent emails for will appear here.</p>
+          </>
+        )}
+        {viewMode === 'saved' && (
+          <button
+            onClick={() => setEditingJob({ title: '', company: '', location: '', url: '', description: '' })}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add Custom Job
+          </button>
+        )}
       </div>
     );
   }
 
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <div className="p-6 border-b border-slate-200 flex justify-between items-center">
-        <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-          <Bookmark className="w-5 h-5 text-indigo-600" />
-          Saved Jobs Collection
-        </h2>
-        <div className="flex items-center gap-3">
-          <span className="bg-slate-100 text-slate-600 text-sm px-3 py-1 rounded-full font-medium">
-            {savedJobs.length} Saved
-          </span>
-          <button
-            onClick={() => setEditingJob({ title: '', company: '', location: '', url: '', description: '' })}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg text-sm font-medium transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Add Job
-          </button>
-        </div>
-      </div>
-
-      {error && (
-        <div className="px-6 py-3 bg-red-50 text-red-600 text-sm border-b border-red-100">
-          {error}
-        </div>
-      )}
-
-      <div className="divide-y divide-slate-100">
-        {savedJobs.map(job => (
-          <div key={job.id} className="p-6 hover:bg-slate-50 transition-colors">
+  const renderJobCard = (job) => (
+    <div key={job.id} className="p-6 hover:bg-slate-50 transition-colors">
             <div className="flex justify-between items-start mb-4">
               <div>
                 <h3 className="font-semibold text-slate-900 text-lg">{job.title}</h3>
@@ -405,10 +394,44 @@ export default function SavedJobs({ savedJobs, setSavedJobs }) {
               </div>
             </div>
           </div>
-        ))}
+  );
+
+  
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="p-6 border-b border-slate-200 flex justify-between items-center">
+        <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+          {viewMode === 'saved' ? <Bookmark className="w-5 h-5 text-indigo-600" /> : <Send className="w-5 h-5 text-green-600" />}
+          {viewMode === 'saved' ? 'Saved Jobs Collection' : 'Applied Jobs'}
+        </h2>
+        <div className="flex items-center gap-3">
+          <span className="bg-slate-100 text-slate-600 text-sm px-3 py-1 rounded-full font-medium">
+            {jobsToDisplay.length} {viewMode === 'saved' ? 'Saved' : 'Applied'}
+          </span>
+          {viewMode === 'saved' && (
+            <button
+              onClick={() => setEditingJob({ title: '', company: '', location: '', url: '', description: '' })}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg text-sm font-medium transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Add Job
+            </button>
+          )}
+        </div>
+      </div>
+
+      {error && (
+        <div className="px-6 py-3 bg-red-50 text-red-600 text-sm border-b border-red-100">
+          {error}
+        </div>
+      )}
+
+      <div className="divide-y divide-slate-100">
+        {jobsToDisplay.map(renderJobCard)}
       </div>
 
       {activeModalJob && (
+
         <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-5xl max-h-[90vh] flex flex-col">
             <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl">
