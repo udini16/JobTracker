@@ -11,7 +11,7 @@ async function sendReachoutEmail(toEmail, subject, body, jobId, attachments = []
         if (process.env.RESEND_API_KEY) {
             const { data, error } = await resend.emails.send({
                 from: fromEmail,
-                to: [toEmail],
+                to: toEmail,
                 subject: subject,
                 text: body,
                 html: htmlBody,
