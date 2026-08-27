@@ -1,0 +1,30 @@
+{
+  "name": "jobportal",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "npm start --prefix server",
+    "client": "npm run dev --prefix client",
+    "install:all": "npm install && npm install --prefix server && npm install --prefix client"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/udini16/JobTracker.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/udini16/JobTracker/issues"
+  },
+  "homepage": "https://github.com/udini16/JobTracker#readme",
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  }
+}
