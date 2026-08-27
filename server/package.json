@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node src/index.js"
+    "start": "nodemon src/index.js"
   },
   "keywords": [],
   "author": "",
@@ -22,5 +22,8 @@
     "openai": "^7.5.0",
     "puppeteer": "^25.8.0",
     "ts-jobspy": "^2.0.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
   }
 }
